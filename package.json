@@ -16,6 +16,9 @@
   ],
   "author": "",
   "license": "ISC",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "bugs": {
     "url": "https://github.com/nehal7-ml/CyberShopTechPrismaSchema/issues"
   },
