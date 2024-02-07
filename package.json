@@ -1,0 +1,26 @@
+{
+  "name": "cybershoptechprismaschema",
+  "version": "1.0.0",
+  "description": "prisma schema for cyberoni database",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nehal7-ml/CyberShopTechPrismaSchema.git"
+  },
+  "keywords": [
+    "prisma",
+    "mext.js"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nehal7-ml/CyberShopTechPrismaSchema/issues"
+  },
+  "homepage": "https://github.com/nehal7-ml/CyberShopTechPrismaSchema#readme",
+  "dependencies": {
+    "@prisma/client": "^5.9.1"
+  }
+}
