@@ -512,7 +512,7 @@ model Referral {
   expires     DateTime?
   description String           @db.Text
   priority    ReferralPriority @default(LOW)
-  redirect    String
+  redirect    String           @db.Text
   link        String
   fallback    String
   click       Int
