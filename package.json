@@ -1,6 +1,6 @@
 {
   "name": "@nehal7-ml/cybershoptechprismaschema",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "prisma schema for cyberoni database",
   "main": "index.js",
   "scripts": {
