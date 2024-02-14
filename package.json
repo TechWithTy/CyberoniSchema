@@ -1,8 +1,7 @@
 {
-  "name": "@nehal7-ml/cybershoptechprismaschema",
+  "name": "@TechWithTy/CyberoniSchema",
   "version": "1.0.2",
   "description": "prisma schema for cyberoni database",
-  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "generate": "prisma generate",
@@ -10,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nehal7-ml/CyberShopTechPrismaSchema.git"
+    "url": "git+https://github.com/TechWithTy/CyberoniSchema.git"
   },
   "keywords": [
     "prisma",
@@ -22,9 +21,9 @@
     "registry": "https://npm.pkg.github.com"
   },
   "bugs": {
-    "url": "https://github.com/nehal7-ml/CyberShopTechPrismaSchema/issues"
+    "url": "https://github.com/TechWithTy/CyberoniSchema/issues"
   },
-  "homepage": "https://github.com/nehal7-ml/CyberShopTechPrismaSchema#readme",
+  "homepage": "https://github.com/TechWithTy/CyberoniSchema#readme",
   "dependencies": {
     "@prisma/client": "^5.7.1"
   },
