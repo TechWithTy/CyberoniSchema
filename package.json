@@ -1,5 +1,5 @@
 {
-  "name": "@TechWithTy/CyberoniSchema",
+  "name": "@techwithty/cyberoni-schema",
   "version": "1.0.3",
   "description": "prisma schema for cyberoni database",
   "scripts": {

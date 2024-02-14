@@ -59,7 +59,7 @@ To add an environment variable like NPM_TOKEN to different terminals such as Pow
 For other shell environments, the process is similar to Bash and Zsh. You typically need to add the export command to the appropriate shell profile file (e.g., ~/.bashrc, ~/.zshrc, ~/.profile).
 
 use follwoing commad to install the latest schema version
-`npm install @nehal7-ml/cybershoptechprismaschema@latest`
+`npm install @techwithty/cyberoni-schema@latest`
 
 add schema loaction to package.json
 ```
