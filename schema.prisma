@@ -318,8 +318,8 @@ model Service {
   skillsUsed         Json
   htmlEmbed          String?
   featured           Boolean              @default(false)
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt @default(now())
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @default(now()) @updatedAt
   reviews            Review[]
   tags               Tag[]
   imageId            String?
@@ -406,7 +406,6 @@ model SubService {
   image                                     Image?            @relation(fields: [imageId], references: [id])
   title                                     String
   pricingModel                              PricingModel      @default(DEFAULT)
-  discounts                                 Json?
   serviceDeliverables                       Json?
   tags                                      Tag[]
   serviceUsageScore                         Int
@@ -425,6 +424,13 @@ model SubService {
 
   @@index([imageId])
   @@index([serviceId])
+}
+
+model Discount {
+  id      String    @id @default(cuid())
+  name    String    @unique
+  value   Int       @default(0)
+  expires DateTime?
 }
 
 model FAQ {
@@ -459,7 +465,7 @@ model CaseStudy {
   architecture        Json?
   serviceId           String?
   createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt @default(now())
+  updatedAt           DateTime     @default(now()) @updatedAt
 
   @@index([serviceId])
 }
