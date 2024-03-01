@@ -51,7 +51,7 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model User {
+model   User {
   id             String            @id @default(cuid())
   firstName      String?
   lastName       String?
@@ -124,6 +124,7 @@ model ServiceCart {
   items          ServiceCartItem[]
   status         ServiceCartStatus @default(PENDING)
   ServicePayment ServicePayment[]
+  discounts      Discount[]
 
   @@index([userId])
 }
@@ -427,10 +428,11 @@ model SubService {
 }
 
 model Discount {
-  id      String    @id @default(cuid())
-  name    String    @unique
-  value   Int       @default(0)
-  expires DateTime?
+  id           String        @id @default(cuid())
+  name         String        @unique
+  value        Int           @default(0)
+  expires      DateTime?
+  ServiceCarts ServiceCart[]
 }
 
 model FAQ {
