@@ -51,7 +51,7 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model   User {
+model User {
   id             String            @id @default(cuid())
   firstName      String?
   lastName       String?
@@ -473,31 +473,51 @@ model CaseStudy {
 }
 
 model GptPrompt {
-  id                String     @id @default(uuid())
-  description       String     @db.Text
-  title             String     @default("")
-  prompt            String?    @db.Text
-  model             String?    @default("gpt-3.5-turbo")
-  temperature       Int?       @default(0)
-  max_tokens        Int?       @default(0)
-  top_p             Int?       @default(0)
-  best_of           Int?       @default(0)
-  frequency_penalty Int?       @default(0)
-  presence_penalty  Int?       @default(0)
-  botUrl            String?    @db.Text
-  completions       Int?       @default(1)
-  stop              Json?
-  timesUsed         Int?       @default(0)
-  timesIntegrated   Int?       @default(0)
-  costPerToken      Int?       @default(0)
-  profitMargin      Int?       @default(0)
-  tags              Tag[]
-  image             Image?     @relation(fields: [imageId], references: [id])
-  reviews           Review[]
-  imageId           String?
-  pricing           GptPricing @default(LOW)
+  id                      String     @id @default(uuid())
+  description             String     @db.Text
+  title                   String     @default("")
+  prompt                  String?    @db.Text
+  model                   String?    @default("gpt-3.5-turbo")
+  temperature             Int?       @default(0)
+  max_tokens              Int?       @default(0)
+  top_p                   Int?       @default(0)
+  best_of                 Int?       @default(0)
+  frequency_penalty       Int?       @default(0)
+  presence_penalty        Int?       @default(0)
+  botUrl                  String?    @db.Text
+  completions             Int?       @default(1)
+  stop                    Json?
+  timesUsed               Int?       @default(0)
+  timesIntegrated         Int?       @default(0)
+  costPerToken            Int?       @default(0)
+  profitMargin            Int?       @default(0)
+  seed                    Int? // Random seed for reproducibility
+  stream                  Boolean    @default(true) // Enable streaming mode
+  variables               Json?
+  startPhrase             String?
+  conversationStarters    Json?
+  steps                   Json?
+  sysCommands              Json?
+  toolChoice              String?
+  tools                   GptTool[]
+  tags                    Tag[]
+  image                   Image?     @relation(fields: [imageId], references: [id])
+  reviews                 Review[]
+  imageId                 String?
+  pricing                 GptPricing @default(LOW)
 
   @@index([imageId])
+}
+
+model GptTool {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  parameters  String?
+  GptPrompt   GptPrompt? @relation(fields: [gptPromptId], references: [id])
+  gptPromptId String?
+
+  @@index([gptPromptId])
 }
 
 model Event {
