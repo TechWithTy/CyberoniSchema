@@ -246,15 +246,29 @@ model Blog {
   content        String        @db.LongText
   tags           Tag[]
   template       BlogTemplate? @relation(fields: [blogTemplateId], references: [id])
+  category       BlogCategory? @relation(fields: [blogCategoryId], references: [id])
   userId         String
   Likes          BlogLike[]
   Views          Int           @default(0)
   Comments       BlogComment[]
   blogTemplateId String?
   publishDate    DateTime      @default(now())
+  blogCategoryId String?
 
   @@index([userId])
   @@index([blogTemplateId])
+  @@index([blogCategoryId])
+}
+
+model BlogCategory {
+  id       String         @id @default(cuid())
+  name     String         @unique
+  children BlogCategory[] @relation("SubCategories")
+  parent   BlogCategory?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentId String?
+  Blog     Blog[]
+
+  @@index([parentId])
 }
 
 model BlogTemplate {
@@ -473,40 +487,54 @@ model CaseStudy {
 }
 
 model GptPrompt {
-  id                      String     @id @default(uuid())
-  description             String     @db.Text
-  title                   String     @default("")
-  prompt                  String?    @db.Text
-  model                   String?    @default("gpt-3.5-turbo")
-  temperature             Int?       @default(0)
-  max_tokens              Int?       @default(0)
-  top_p                   Int?       @default(0)
-  best_of                 Int?       @default(0)
-  frequency_penalty       Int?       @default(0)
-  presence_penalty        Int?       @default(0)
-  botUrl                  String?    @db.Text
-  completions             Int?       @default(1)
-  stop                    Json?
-  timesUsed               Int?       @default(0)
-  timesIntegrated         Int?       @default(0)
-  costPerToken            Int?       @default(0)
-  profitMargin            Int?       @default(0)
-  seed                    Int? // Random seed for reproducibility
-  stream                  Boolean    @default(true) // Enable streaming mode
-  variables               Json?
-  startPhrase             String?
-  conversationStarters    Json?
-  steps                   Json?
-  sysCommands              Json?
-  toolChoice              String?
-  tools                   GptTool[]
-  tags                    Tag[]
-  image                   Image?     @relation(fields: [imageId], references: [id])
-  reviews                 Review[]
-  imageId                 String?
-  pricing                 GptPricing @default(LOW)
+  id                   String       @id @default(uuid())
+  description          String       @db.Text
+  title                String       @default("")
+  prompt               String?      @db.Text
+  model                String?      @default("gpt-3.5-turbo")
+  temperature          Int?         @default(0)
+  max_tokens           Int?         @default(0)
+  top_p                Int?         @default(0)
+  best_of              Int?         @default(0)
+  frequency_penalty    Int?         @default(0)
+  presence_penalty     Int?         @default(0)
+  botUrl               String?      @db.Text
+  completions          Int?         @default(1)
+  stop                 Json?
+  timesUsed            Int?         @default(0)
+  timesIntegrated      Int?         @default(0)
+  costPerToken         Int?         @default(0)
+  profitMargin         Int?         @default(0)
+  seed                 Int? // Random seed for reproducibility
+  stream               Boolean      @default(true) // Enable streaming mode
+  variables            Json?
+  startPhrase          String?
+  conversationStarters Json?
+  steps                Json?
+  sysCommands          Json?
+  toolChoice           String?
+  tools                GptTool[]
+  tags                 Tag[]
+  image                Image?       @relation(fields: [imageId], references: [id])
+  reviews              Review[]
+  imageId              String?
+  pricing              GptPricing   @default(LOW)
+  category             GptCategory? @relation(fields: [gptCategoryId], references: [id])
+  gptCategoryId        String?
 
   @@index([imageId])
+  @@index([gptCategoryId])
+}
+
+model GptCategory {
+  id       String        @id @default(cuid())
+  name     String        @unique
+  children GptCategory[] @relation("SubCategories")
+  parent   GptCategory?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentId String?
+  prompts  GptPrompt[]
+
+  @@index([parentId])
 }
 
 model GptTool {
@@ -554,15 +582,16 @@ model Referral {
 }
 
 model Tag {
-  id          String       @id @default(uuid())
-  name        String       @unique
-  products    Product[]
-  blog        Blog[]
-  reviews     Review[]
-  services    Service[]
-  subServices SubService[]
-  prompts     GptPrompt[]
-  events      Event[]
+  id            String       @id @default(uuid())
+  name          String       @unique
+  products      Product[]
+  blog          Blog[]
+  reviews       Review[]
+  services      Service[]
+  subServices   SubService[]
+  prompts       GptPrompt[]
+  events        Event[]
+
 }
 
 model Property {
