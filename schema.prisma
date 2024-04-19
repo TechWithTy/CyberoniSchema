@@ -89,8 +89,8 @@ model Address {
   state         String
   zipCode       String
   country       String
-  createdAt     DateTime
-  updateAt      DateTime     @default(now())
+  createdAt     DateTime     @default(now())
+  updateAt      DateTime     @updatedAt @default(now())
   User          User[]
   Property      Property[]
   coordinatesId String?
@@ -314,7 +314,7 @@ model BlogLike {
   userId    String
   blogId    String
   updatedAt DateTime @default(now()) @updatedAt
-  
+
   @@id([userId, blogId])
   @@index([userId])
   @@index([blogId])
