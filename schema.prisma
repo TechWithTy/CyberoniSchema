@@ -254,6 +254,7 @@ model Blog {
   blogTemplateId String?
   publishDate    DateTime      @default(now())
   blogCategoryId String?
+  updatedAt      DateTime      @default(now()) @updatedAt
 
   @@index([userId])
   @@index([blogTemplateId])
@@ -261,12 +262,13 @@ model Blog {
 }
 
 model BlogCategory {
-  id       String         @id @default(cuid())
-  name     String         @unique
-  children BlogCategory[] @relation("SubCategories")
-  parent   BlogCategory?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  parentId String?
-  Blog     Blog[]
+  id        String         @id @default(cuid())
+  name      String         @unique
+  children  BlogCategory[] @relation("SubCategories")
+  parent    BlogCategory?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentId  String?
+  Blog      Blog[]
+  updatedAt DateTime       @default(now()) @updatedAt
 
   @@index([parentId])
 }
@@ -293,10 +295,11 @@ model BlogComment {
 }
 
 model BlogLike {
-  user   User   @relation(fields: [userId], references: [id])
-  blog   Blog   @relation(fields: [blogId], references: [id])
-  userId String
-  blogId String
+  user      User     @relation(fields: [userId], references: [id])
+  blog      Blog     @relation(fields: [blogId], references: [id])
+  userId    String
+  blogId    String
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@id([userId, blogId])
   @@index([userId])
@@ -321,6 +324,8 @@ model Supplier {
   supplierEmail           String?
   supplierWhatsApp        String?
   products                Product[]
+  updatedAt               DateTime  @default(now()) @updatedAt
+  createdAt               DateTime  @default(now())
 }
 
 model Service {
@@ -348,14 +353,15 @@ model Service {
 }
 
 model ServiceDescription {
-  id          String  @id @default(uuid())
+  id          String   @id @default(uuid())
   title       String
-  content     String  @db.LongText
-  imageOnLeft Boolean @default(true)
-  image       Image?  @relation(fields: [imageId], references: [id], onDelete: SetNull)
-  service     Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  content     String   @db.LongText
+  imageOnLeft Boolean  @default(true)
+  image       Image?   @relation(fields: [imageId], references: [id], onDelete: SetNull)
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   imageId     String?
   serviceId   String
+  updatedAt   DateTime @default(now()) @updatedAt
 
   @@index([serviceId])
   @@index([imageId])
@@ -369,6 +375,7 @@ model Payment {
   customer       User     @relation(fields: [userId], references: [id])
   createdAt      DateTime @default(now())
   userId         String
+  updatedAt      DateTime @default(now()) @updatedAt
 
   @@index([userId])
 }
@@ -393,6 +400,8 @@ model Review {
   userId           String
   imageId          String?
   gptPromptId      String?
+  updatedAt        DateTime   @default(now()) @updatedAt
+  createdAt        DateTime   @default(now())
 
   @@index([productId])
   @@index([serviceId])
@@ -405,6 +414,8 @@ model Image {
   id                 String               @id @default(uuid())
   name               String?
   src                String               @db.Text
+  updatedAt          DateTime             @default(now()) @updatedAt
+  createdAt          DateTime             @default(now())
   products           Product[]
   blogs              Blog[]
   Service            Service[]
@@ -436,6 +447,7 @@ model SubService {
   serviceId                                 String
   ServiceCartItem                           ServiceCartItem[]
   CaseStudies                               CaseStudy[]
+  updatedAt                                 DateTime          @default(now()) @updatedAt
 
   @@index([imageId])
   @@index([serviceId])
@@ -446,6 +458,8 @@ model Discount {
   name         String        @unique
   value        Int           @default(0)
   expires      DateTime?
+  updatedAt    DateTime      @default(now()) @updatedAt
+  createdAt    DateTime      @default(now())
   ServiceCarts ServiceCart[]
 }
 
@@ -455,6 +469,8 @@ model FAQ {
   answer    String   @db.Text
   Service   Service? @relation(fields: [serviceId], references: [id])
   serviceId String?
+  updatedAt DateTime @default(now()) @updatedAt
+  createdAt DateTime @default(now())
 
   @@index([serviceId])
 }
@@ -521,6 +537,8 @@ model GptPrompt {
   pricing              GptPricing   @default(LOW)
   category             GptCategory? @relation(fields: [gptCategoryId], references: [id])
   gptCategoryId        String?
+  updatedAt            DateTime     @default(now()) @updatedAt
+  createdAt            DateTime     @default(now())
 
   @@index([imageId])
   @@index([gptCategoryId])
@@ -544,6 +562,8 @@ model GptTool {
   parameters  String?
   GptPrompt   GptPrompt? @relation(fields: [gptPromptId], references: [id])
   gptPromptId String?
+  updatedAt   DateTime   @default(now()) @updatedAt
+  createdAt   DateTime   @default(now())
 
   @@index([gptPromptId])
 }
@@ -560,6 +580,8 @@ model Event {
   status      EventStatus
   isVirtual   Boolean
   tags        Tag[]
+  updatedAt   DateTime    @default(now()) @updatedAt
+  createdAt   DateTime    @default(now())
 
   @@index([imageId])
 }
@@ -577,21 +599,22 @@ model Referral {
   fallback    String
   click       Int
   utmProps    Json?
+  updatedAt   DateTime         @default(now()) @updatedAt
+  createdAt   DateTime         @default(now())
 
   @@unique([type, prefix], name: "referralId")
 }
 
 model Tag {
-  id            String       @id @default(uuid())
-  name          String       @unique
-  products      Product[]
-  blog          Blog[]
-  reviews       Review[]
-  services      Service[]
-  subServices   SubService[]
-  prompts       GptPrompt[]
-  events        Event[]
-
+  id          String       @id @default(uuid())
+  name        String       @unique
+  products    Product[]
+  blog        Blog[]
+  reviews     Review[]
+  services    Service[]
+  subServices SubService[]
+  prompts     GptPrompt[]
+  events      Event[]
 }
 
 model Property {
