@@ -89,6 +89,8 @@ model Address {
   state         String
   zipCode       String
   country       String
+  createdAt     DateTime
+  updateAt      DateTime     @default(now())
   User          User[]
   Property      Property[]
   coordinatesId String?
@@ -121,6 +123,8 @@ model ServiceCart {
   id             String            @id @default(uuid())
   user           User?             @relation(fields: [userId], references: [id])
   userId         String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @default(now()) @updatedAt
   items          ServiceCartItem[]
   status         ServiceCartStatus @default(PENDING)
   ServicePayment ServicePayment[]
@@ -134,6 +138,8 @@ model ServiceCartItem {
   service       Service?     @relation(fields: [serviceId], references: [id])
   amount        Int          @default(0)
   addons        SubService[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @default(now()) @updatedAt
   serviceId     String?
   ServiceCart   ServiceCart  @relation(fields: [serviceCartId], references: [id])
   serviceCartId String
@@ -146,6 +152,8 @@ model ServicePayment {
   id            String        @id @default(uuid())
   paymentId     String        @unique
   status        PaymentStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now()) @updatedAt
   order         ServiceCart   @relation(fields: [serviceCartId], references: [id])
   serviceCartId String
 
@@ -178,6 +186,8 @@ model ApiCredential {
   refreshToken       String   @db.Text
   refreshTokenExpiry DateTime
   user               User     @relation(fields: [userId], references: [id])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @default(now()) @updatedAt
   userId             String
 
   @@index([userId])
@@ -206,6 +216,8 @@ model Product {
   amazonProductId      String?
   cjDropShippingId     String?
   Order                Order[]
+  updatedAt            DateTime          @default(now()) @updatedAt
+  createdAt            DateTime          @default(now())
 
   @@index([amazonProductId])
   @@index([cjDropShippingId])
@@ -228,6 +240,8 @@ model Order {
   productId String
   addressId String
   status    OrderStatus @default(CREATED)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @default(now()) @updatedAt
 
   @@index([productId])
   @@index([userId])
@@ -300,7 +314,7 @@ model BlogLike {
   userId    String
   blogId    String
   updatedAt DateTime @default(now()) @updatedAt
-
+  
   @@id([userId, blogId])
   @@index([userId])
   @@index([blogId])
