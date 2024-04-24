@@ -90,7 +90,7 @@ model Address {
   zipCode       String
   country       String
   createdAt     DateTime     @default(now())
-  updateAt      DateTime     @updatedAt @default(now())
+  updateAt      DateTime     @default(now()) @updatedAt
   User          User[]
   Property      Property[]
   coordinatesId String?
@@ -207,7 +207,7 @@ model Product {
   price                Int
   profitMargin         Int
   displayPrice         Int
-  category             String
+  category             ProductCategory?  @relation(fields: [productCategoryId], references: [id])
   subcategory          String?
   images               Image[]
   cart                 ProductCartItem[]
@@ -218,9 +218,22 @@ model Product {
   Order                Order[]
   updatedAt            DateTime          @default(now()) @updatedAt
   createdAt            DateTime          @default(now())
+  productCategoryId    String?
 
   @@index([amazonProductId])
   @@index([cjDropShippingId])
+  @@index([productCategoryId])
+}
+
+model ProductCategory {
+  id       String            @id @default(cuid())
+  name     String
+  children ProductCategory[] @relation("Subcategories")
+  parent   ProductCategory?  @relation("Subcategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentId String?
+  Product  Product[]
+
+  @@index([parentId])
 }
 
 model AmazonProduct {
