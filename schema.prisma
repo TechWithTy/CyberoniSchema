@@ -214,14 +214,14 @@ model Product {
   suppliers            Supplier[]
   reviews              Review[]
   amazonProductId      String?
-  cjDropShippingId     String?
+  aliexpressId         String?
   Order                Order[]
   updatedAt            DateTime          @default(now()) @updatedAt
   createdAt            DateTime          @default(now())
   productCategoryId    String?
 
   @@index([amazonProductId])
-  @@index([cjDropShippingId])
+  @@index([aliexpressId])
   @@index([productCategoryId])
 }
 
@@ -236,13 +236,7 @@ model ProductCategory {
   @@index([parentId])
 }
 
-model AmazonProduct {
-  id String @id @default(uuid())
-}
 
-model CjShipping {
-  id String @id @default(uuid())
-}
 
 model Order {
   id        String      @id @default(uuid())

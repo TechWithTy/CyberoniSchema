@@ -1,6 +1,6 @@
 {
   "name": "@techwithty/cyberoni-schema",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "prisma schema for cyberoni database",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -26,7 +26,7 @@
   "homepage": "https://github.com/TechWithTy/CyberoniSchema#readme",
   "dependencies": {
     "@prisma/client": "^5.12.1",
-    "mysqldump": "^3.2.0"
+    "mysql2": "^3.9.7"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
