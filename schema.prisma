@@ -236,8 +236,6 @@ model ProductCategory {
   @@index([parentId])
 }
 
-
-
 model Order {
   id        String      @id @default(uuid())
   user      User        @relation(fields: [userId], references: [id])
@@ -284,7 +282,7 @@ model Blog {
 
 model BlogCategory {
   id        String         @id @default(cuid())
-  name      String         @unique
+  name      String
   children  BlogCategory[] @relation("SubCategories")
   parent    BlogCategory?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   parentId  String?
@@ -552,7 +550,7 @@ model GptPrompt {
   toolChoice           String?
   tools                GptTool[]
   tags                 Tag[]
-  image                Image?       @relation(fields: [imageId], references: [id])
+  image                Image[]
   reviews              Review[]
   imageId              String?
   pricing              GptPricing   @default(LOW)
@@ -561,13 +559,12 @@ model GptPrompt {
   updatedAt            DateTime     @default(now()) @updatedAt
   createdAt            DateTime     @default(now())
 
-  @@index([imageId])
   @@index([gptCategoryId])
 }
 
 model GptCategory {
   id       String        @id @default(cuid())
-  name     String        @unique
+  name     String
   children GptCategory[] @relation("SubCategories")
   parent   GptCategory?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   parentId String?
@@ -593,18 +590,15 @@ model Event {
   id          String      @id @default(uuid())
   name        String
   date        DateTime
-  location    String
+  location    String      @db.Text
   description String      @db.Text
-  image       Image?      @relation(fields: [imageId], references: [id])
-  imageId     String?
+  image       Image[]
   eventLink   String      @db.Text // URL for Eventbrite or Facebook event page
   status      EventStatus
   isVirtual   Boolean
   tags        Tag[]
   updatedAt   DateTime    @default(now()) @updatedAt
   createdAt   DateTime    @default(now())
-
-  @@index([imageId])
 }
 
 model Referral {
