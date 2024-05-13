@@ -76,6 +76,8 @@ model User {
   BlogComment    BlogComment[]
   Order          Order[]
   ServiceCart    ServiceCart[]
+  Credit         Credit[]
+  AiRequest      AiRequest[]
 
   @@index([addressId])
   @@index([imageId])
@@ -253,27 +255,79 @@ model Order {
   @@index([addressId])
 }
 
+model SoftwareProduct {
+  id          String                @id @default(cuid())
+  title       String
+  subTitle    String
+  description String?
+  images      Image[]
+  tags        Tag[]
+  pricing     SoftwarePricing
+  link        String?               @db.LongText
+  githubLink  String?               @db.LongText
+  status      SoftwareProductStatus
+
+  blog Blog? @relation(fields: [blogId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category                  SoftwareProductCategory? @relation(fields: [softwareProductCategoryId], references: [id])
+  softwareProductCategoryId String?
+  blogId                    String?
+
+  @@index([softwareProductCategoryId])
+  @@index([blogId])
+}
+
+enum SoftwareProductStatus {
+  Released
+  Beta
+  Alpha
+  ComingSoon
+  Planned
+}
+
+enum SoftwarePricing {
+  Freemium
+  Free
+  Paid
+  Subscription
+}
+
+model SoftwareProductCategory {
+  id              String                    @id @default(cuid())
+  name            String
+  children        SoftwareProductCategory[] @relation("Subcategories")
+  parent          SoftwareProductCategory?  @relation("Subcategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentId        String?
+  SoftwareProduct SoftwareProduct[]
+
+  @@index([parentId])
+}
+
 model Blog {
-  id             String        @id @default(uuid())
-  title          String
-  subTitle       String
-  description    String        @db.Text
-  featured       Boolean       @default(false)
-  images         Image[]
-  author         User          @relation(fields: [userId], references: [id])
-  date           DateTime      @default(now())
-  content        String        @db.LongText
-  tags           Tag[]
-  template       BlogTemplate? @relation(fields: [blogTemplateId], references: [id])
-  category       BlogCategory? @relation(fields: [blogCategoryId], references: [id])
-  userId         String
-  Likes          BlogLike[]
-  Views          Int           @default(0)
-  Comments       BlogComment[]
-  blogTemplateId String?
-  publishDate    DateTime      @default(now())
-  blogCategoryId String?
-  updatedAt      DateTime      @default(now()) @updatedAt
+  id              String            @id @default(uuid())
+  title           String
+  subTitle        String
+  description     String            @db.Text
+  featured        Boolean           @default(false)
+  images          Image[]
+  author          User              @relation(fields: [userId], references: [id])
+  date            DateTime          @default(now())
+  content         String            @db.LongText
+  tags            Tag[]
+  template        BlogTemplate?     @relation(fields: [blogTemplateId], references: [id])
+  category        BlogCategory?     @relation(fields: [blogCategoryId], references: [id])
+  userId          String
+  Likes           BlogLike[]
+  Views           Int               @default(0)
+  Comments        BlogComment[]
+  blogTemplateId  String?
+  publishDate     DateTime          @default(now())
+  blogCategoryId  String?
+  updatedAt       DateTime          @default(now()) @updatedAt
+  SoftwareProduct SoftwareProduct[]
 
   @@index([userId])
   @@index([blogTemplateId])
@@ -444,6 +498,7 @@ model Image {
   User               User[]
   Event              Event[]
   ServiceDescription ServiceDescription[]
+  SoftwareProduct    SoftwareProduct[]
 }
 
 model SubService {
@@ -558,6 +613,7 @@ model GptPrompt {
   gptCategoryId        String?
   updatedAt            DateTime     @default(now()) @updatedAt
   createdAt            DateTime     @default(now())
+  AiRequest            AiRequest[]
 
   @@index([gptCategoryId])
 }
@@ -620,16 +676,93 @@ model Referral {
   @@unique([type, prefix], name: "referralId")
 }
 
+model Credit {
+  id      String @id @default(cuid())
+  credits Float  @default(0)
+  user    User   @relation(fields: [userId], references: [id])
+  userId  String @unique
+
+  @@index([userId])
+}
+
+model AiRequestUsage {
+  id        String   @id @default(cuid())
+  cost      Float    @default(0)
+  tokens    Int?     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AiRequest {
+  id            String           @id @default(cuid())
+  user          User?            @relation(fields: [userId], references: [id])
+  prompt        String
+  requestFiles  AiRequestFile[]
+  ip            String
+  duration      Float
+  response      String
+  gptPromptUsed GptPrompt?       @relation(fields: [gptPromptId], references: [id])
+  userId        String?
+  gptPromptId   String?
+  responseFiles AiResponseFile[]
+
+  @@index([userId])
+  @@index([gptPromptId])
+}
+
+model AiRequestFile {
+  id          String     @id @default(cuid())
+  name        String
+  src         String
+  AiRequest   AiRequest? @relation(fields: [aiRequestId], references: [id])
+  aiRequestId String?
+
+  @@index([aiRequestId])
+}
+
+model AiResponseFile {
+  id          String     @id @default(cuid())
+  name        String
+  src         String
+  AiRequest   AiRequest? @relation(fields: [aiRequestId], references: [id])
+  aiRequestId String?
+
+  @@index([aiRequestId])
+}
+
+model AiCost {
+  id        String     @id @default(cuid())
+  modelId   String
+  modelType String
+  provider  AiProvider
+  cost      Int // $20.00 = 2000 // stripe style pricing 
+  costType  AiCostType
+}
+
+enum AiCostType {
+  costPerToken
+  costPerRequest
+  costPerSession
+  costPerCPUSec
+}
+
+enum AiProvider {
+  OpenAI
+  HF //huggingface
+  LangChain
+}
+
 model Tag {
-  id          String       @id @default(uuid())
-  name        String       @unique
-  products    Product[]
-  blog        Blog[]
-  reviews     Review[]
-  services    Service[]
-  subServices SubService[]
-  prompts     GptPrompt[]
-  events      Event[]
+  id              String            @id @default(uuid())
+  name            String            @unique
+  products        Product[]
+  blog            Blog[]
+  reviews         Review[]
+  services        Service[]
+  subServices     SubService[]
+  prompts         GptPrompt[]
+  events          Event[]
+  SoftwareProduct SoftwareProduct[]
 }
 
 model Property {
