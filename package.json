@@ -1,6 +1,6 @@
 {
   "name": "@techwithty/cyberoni-schema",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "prisma schema for cyberoni database",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

@@ -1,8 +1,7 @@
 datasource db {
-  provider          = "mysql"
-  url               = env("DATABASE_URL_MAIN")
-  shadowDatabaseUrl = env("DATABASE_URL_SHADOW")
-  relationMode      = "prisma"
+  provider     = "mysql"
+  url          = env("DATABASE_URL_MAIN")
+  relationMode = "prisma"
 }
 
 generator client {
@@ -31,7 +30,6 @@ model Account {
 }
 
 model Session {
-  id           String     @id @default(cuid())
   sessionToken String     @unique
   userId       String
   expires      DateTime
@@ -69,15 +67,18 @@ model User {
   CartItem       ProductCartItem[]
   ApiCredentials ApiCredential[]
   BlogLike       BlogLike[]
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @default(now()) @updatedAt
-  Session        Session[]
-  Payment        Payment[]
-  BlogComment    BlogComment[]
-  Order          Order[]
-  ServiceCart    ServiceCart[]
-  Credit         Credit[]
-  AiRequest      AiRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  Session      Session[]
+  Payment      Payment[]
+  BlogComment  BlogComment[]
+  Order        Order[]
+  ServiceCart  ServiceCart[]
+  AiRequest    AiRequest[]
+  Subscription Subscription[]
+  Credit       Credit?
 
   @@index([addressId])
   @@index([imageId])
@@ -267,7 +268,8 @@ model SoftwareProduct {
   githubLink  String?               @db.LongText
   status      SoftwareProductStatus
 
-  blog Blog? @relation(fields: [blogId], references: [id])
+  subscriptionModel SubscriptionModel[]
+  blog              Blog?               @relation(fields: [blogId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -275,9 +277,28 @@ model SoftwareProduct {
   category                  SoftwareProductCategory? @relation(fields: [softwareProductCategoryId], references: [id])
   softwareProductCategoryId String?
   blogId                    String?
+  Subscription              Subscription[]
 
   @@index([softwareProductCategoryId])
   @@index([blogId])
+}
+
+model SubscriptionModel {
+  id                String             @id @default(cuid())
+  name              String
+  price             Int
+  features          Json?
+  type              SubscriptionPeriod
+  status            SubscriptionStatus
+  softwareProduct   SoftwareProduct    @relation(fields: [softwareProductId], references: [id])
+  softwareProductId String
+
+  @@index([softwareProductId])
+}
+
+enum SubscriptionPeriod {
+  MONTHLY
+  YEARLY
 }
 
 enum SoftwareProductStatus {
@@ -441,16 +462,28 @@ model ServiceDescription {
 }
 
 model Payment {
-  id             String   @id @default(uuid())
-  subscriptionId String
-  invoice        String   @db.Text
-  price          String
-  customer       User     @relation(fields: [userId], references: [id])
-  createdAt      DateTime @default(now())
+  id             String         @id @default(uuid())
+  purpose        PaymentPurpose @default(PRODUCT)
+  subscription   Subscription?  @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String?
+  invoice        String         @db.Text
+  amount         Int
+  quantity       Int?           @map("qunantity")
+  customer       User           @relation(fields: [userId], references: [id])
+  createdAt      DateTime       @default(now())
   userId         String
-  updatedAt      DateTime @default(now()) @updatedAt
+  updatedAt      DateTime       @default(now()) @updatedAt
 
   @@index([userId])
+  @@index([subscriptionId])
+}
+
+enum PaymentPurpose {
+  SUBSCRIPTION
+  PRODUCT
+  CREDIT
+  REFERRAL
+  INVOICE
 }
 
 model Review {
@@ -564,7 +597,7 @@ model CaseStudy {
   uniqueFeatures      String       @db.Text
   keyLearning         String       @db.Text
   userPersonas        Json
-  competetiveAnalysis Json
+  competitiveAnalysis Json         @map("competetiveAnalysis")
   wireFrames          Json?
   hifiDesign          Json?
   userFlow            Json?
@@ -676,6 +709,28 @@ model Referral {
   @@unique([type, prefix], name: "referralId")
 }
 
+model Subscription {
+  id                    String             @id @default(cuid())
+  status                SubscriptionStatus
+  user                  User               @relation(fields: [userId], references: [id])
+  product               SoftwareProduct    @relation(fields: [subscriptionProductId], references: [id])
+  subscriptionProductId String
+  userId                String
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Payment   Payment[]
+
+  @@index([subscriptionProductId])
+  @@index([userId])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELED
+}
+
 model Credit {
   id      String @id @default(cuid())
   credits Float  @default(0)
@@ -686,28 +741,33 @@ model Credit {
 }
 
 model AiRequestUsage {
-  id        String   @id @default(cuid())
-  cost      Float    @default(0)
-  tokens    Int?     @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String      @id @default(cuid())
+  cost         Float       @default(0)
+  inputTokens  Int?        @default(0)
+  outputTokens Int?        @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  AiRequest    AiRequest[]
 }
 
 model AiRequest {
-  id            String           @id @default(cuid())
-  user          User?            @relation(fields: [userId], references: [id])
-  prompt        String
-  requestFiles  AiRequestFile[]
-  ip            String
-  duration      Float
-  response      String
-  gptPromptUsed GptPrompt?       @relation(fields: [gptPromptId], references: [id])
-  userId        String?
-  gptPromptId   String?
-  responseFiles AiResponseFile[]
+  id               String           @id @default(cuid())
+  user             User?            @relation(fields: [userId], references: [id])
+  prompt           String
+  requestFiles     AiRequestFile[]
+  ip               String
+  duration         Float
+  response         String           @db.LongText
+  gptPromptUsed    GptPrompt?       @relation(fields: [gptPromptId], references: [id])
+  usage            AiRequestUsage   @relation(fields: [aiRequestUsageId], references: [id])
+  userId           String?
+  gptPromptId      String?
+  responseFiles    AiResponseFile[]
+  aiRequestUsageId String
 
   @@index([userId])
   @@index([gptPromptId])
+  @@index([aiRequestUsageId])
 }
 
 model AiRequestFile {
@@ -732,11 +792,14 @@ model AiResponseFile {
 
 model AiCost {
   id        String     @id @default(cuid())
-  modelId   String
+  modelId   String     @unique
   modelType String
   provider  AiProvider
-  cost      Int // $20.00 = 2000 // stripe style pricing 
+  input     Decimal?
+  output    Decimal // $20.00 = 2000 // stripe style pricing 
   costType  AiCostType
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 enum AiCostType {
@@ -850,7 +913,7 @@ enum Role {
 }
 
 enum LoginProvider {
-  faceebook
+  facebook @map("faceebook")
   google
 }
 
