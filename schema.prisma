@@ -7,6 +7,7 @@ datasource db {
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["fullTextSearch", "fullTextIndex"]
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
 model Account {
@@ -56,6 +57,7 @@ model User {
   email          String            @unique
   emailVerified  DateTime?
   password       String            @default("")
+  active         Boolean           @default(true)
   image          Image?            @relation(fields: [imageId], references: [id])
   addressId      String?
   role           Role              @default(USER)
@@ -268,6 +270,8 @@ model SoftwareProduct {
   githubLink  String?               @db.LongText
   status      SoftwareProductStatus
 
+  internal Boolean @default(false)
+
   subscriptionModel SubscriptionModel[]
   blog              Blog?               @relation(fields: [blogId], references: [id])
 
@@ -288,9 +292,11 @@ model SubscriptionModel {
   name              String
   price             Int
   features          Json?
+  credits           Int                @default(0)
+  profit            Float              @default(0)
   type              SubscriptionPeriod
   status            SubscriptionStatus
-  softwareProduct   SoftwareProduct    @relation(fields: [softwareProductId], references: [id])
+  softwareProduct   SoftwareProduct    @relation(fields: [softwareProductId], references: [id], onDelete: Cascade)
   softwareProductId String
 
   @@index([softwareProductId])
