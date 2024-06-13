@@ -7,7 +7,7 @@ datasource db {
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["fullTextSearch", "fullTextIndex"]
-  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+  binaryTargets   = ["native", "rhel-openssl-1.0.x"]
 }
 
 model Account {
@@ -73,14 +73,16 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  Session      Session[]
-  Payment      Payment[]
-  BlogComment  BlogComment[]
-  Order        Order[]
-  ServiceCart  ServiceCart[]
-  AiRequest    AiRequest[]
-  Subscription Subscription[]
-  Credit       Credit?
+  Session         Session[]
+  Payment         Payment[]
+  BlogComment     BlogComment[]
+  Order           Order[]
+  ServiceCart     ServiceCart[]
+  AiRequest       AiRequest[]
+  Subscription    Subscription[]
+  Credit          Credit?
+  OauthTokens     OauthTokens[]
+  OauthAccessCode OauthAccessCode[]
 
   @@index([addressId])
   @@index([imageId])
@@ -968,4 +970,49 @@ enum OrderStatus {
   ACCEPTED
   DISPATCHED
   DELIVERED
+}
+
+// oauth tables
+
+model OauthClient {
+  id              String            @id @default(cuid())
+  secret          String
+  scopes          Json
+  name            String
+  redirectUris    Json
+  OauthTokens     OauthTokens[]
+  OauthAccessCode OauthAccessCode[]
+}
+
+model OauthAccessCode {
+  id     String  @id @default(cuid())
+  code   String
+  scopes Json
+  used   Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id])
+
+  client        OauthClient @relation(fields: [oauthClientId], references: [id])
+  oauthClientId String
+  userId        String
+
+  @@index([oauthClientId])
+  @@index([userId])
+}
+
+model OauthTokens {
+  id           String   @id @default(cuid())
+  refreshToken String   @db.LongText
+  accessToken  String   @db.LongText
+  scopes       Json
+  expiresAt    DateTime
+
+  client OauthClient @relation(fields: [oauthClientId], references: [id])
+
+  user          User   @relation(fields: [userId], references: [id])
+  userId        String
+  oauthClientId String
+
+  @@index([userId])
+  @@index([oauthClientId])
 }
