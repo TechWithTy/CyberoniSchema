@@ -397,13 +397,13 @@ model BlogComment {
 }
 
 model BlogLike {
-  user      User     @relation(fields: [userId], references: [id])
+  id        String   @id @default(uuid())
+  user      User?     @relation(fields: [userId], references: [id])
   blog      Blog     @relation(fields: [blogId], references: [id])
-  userId    String
+  userId    String?
   blogId    String
   updatedAt DateTime @default(now()) @updatedAt
 
-  @@id([userId, blogId])
   @@index([userId])
   @@index([blogId])
 }

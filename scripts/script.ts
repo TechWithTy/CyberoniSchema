@@ -1,28 +1,23 @@
 import { prisma } from '../prismaClient'
-
-
-const categories = [
-    'Security Solutions',
-    'Networking Tools',
-    'Data Analysis',
-    'Cloud Services',
-    'Communication Tools',
-    'Project Management',
-    'Automation Software',
-    'Artificial Intelligence',
-    'E-commerce Platforms',
-    'Customer Relationship Management (CRM)'
-];
+import cuid from "../utils/cuid"
 
 async function runScript() {
-    categories.forEach(async name => {
-        await prisma.softwareProductCategory.create({
-            data: {
-                name
-            }
-
-        })
-    });
+    // const likes = await prisma.blogLike.findMany({
+        
+    // })
+    // await prisma.$transaction(likes.map(like => {
+    //     return prisma.blogLike.update({
+    //         where: {
+    //             userId_blogId: {
+    //                 userId: like.userId,
+    //                 blogId: like.blogId
+    //             }  
+    //         },
+    //         data: {
+    //             id: cuid()
+    //         }
+    //     })
+    // }))
 
 }
 
