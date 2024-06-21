@@ -379,7 +379,7 @@ model Blog {
   publishDate     DateTime          @default(now())
   blogCategoryId  String?
   updatedAt       DateTime          @default(now()) @updatedAt
-  ctaPops         Json?
+  ctaProps         Json?
   SoftwareProduct SoftwareProduct[]
 
   @@index([userId])
