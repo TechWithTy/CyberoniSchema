@@ -73,19 +73,32 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  Session         Session[]
-  Payment         Payment[]
-  BlogComment     BlogComment[]
-  Order           Order[]
-  ServiceCart     ServiceCart[]
-  AiRequest       AiRequest[]
-  Subscription    Subscription[]
-  Credit          Credit?
-  OauthTokens     OauthTokens[]
-  OauthAccessCode OauthAccessCode[]
+  Session                 Session[]
+  Payment                 Payment[]
+  BlogComment             BlogComment[]
+  Order                   Order[]
+  ServiceCart             ServiceCart[]
+  AiRequest               AiRequest[]
+  Subscription            Subscription[]
+  Credit                  Credit?
+  OauthTokens             OauthTokens[]
+  OauthAccessCode         OauthAccessCode[]
+  SoftwareProduct         SoftwareProduct[]
+  SoftwareProductCategory SoftwareProductCategory[]
+
+  createdBy    User?          @relation("createdBy", fields: [creatorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdUsers User[]         @relation("createdBy")
+  creatorId    String?
+  BlogCategory BlogCategory[]
+  Service      Service[]
+  Discount     Discount[]
+  CaseStudy    CaseStudy[]
+  Event        Event[]
+  Referral     Referral[]
 
   @@index([addressId])
   @@index([imageId])
+  @@index([creatorId])
 }
 
 model Address {
@@ -285,8 +298,14 @@ model SoftwareProduct {
   blogId                    String?
   Subscription              Subscription[]
 
+  createdBy User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  
+  Credits    Credit[]
+
   @@index([softwareProductCategoryId])
   @@index([blogId])
+  @@index([userId])
 }
 
 model SubscriptionModel {
@@ -332,7 +351,11 @@ model SoftwareProductCategory {
   parentId        String?
   SoftwareProduct SoftwareProduct[]
 
+  createdBy User?   @relation(fields: [userId], references: [id])
+  userId    String?
+
   @@index([parentId])
+  @@index([userId])
 }
 
 model Blog {
@@ -356,6 +379,7 @@ model Blog {
   publishDate     DateTime          @default(now())
   blogCategoryId  String?
   updatedAt       DateTime          @default(now()) @updatedAt
+  ctaPops         Json?
   SoftwareProduct SoftwareProduct[]
 
   @@index([userId])
@@ -372,7 +396,11 @@ model BlogCategory {
   Blog      Blog[]
   updatedAt DateTime       @default(now()) @updatedAt
 
+  createdBy User?   @relation(fields: [userId], references: [id])
+  userId    String?
+
   @@index([parentId])
+  @@index([userId])
 }
 
 model BlogTemplate {
@@ -398,7 +426,7 @@ model BlogComment {
 
 model BlogLike {
   id        String   @id @default(uuid())
-  user      User?     @relation(fields: [userId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id])
   blog      Blog     @relation(fields: [blogId], references: [id])
   userId    String?
   blogId    String
@@ -451,7 +479,11 @@ model Service {
   faqs               FAQ[]
   ServiceCartItem    ServiceCartItem[]
 
+  createdBy User?   @relation(fields: [userId], references: [id])
+  userId    String?
+
   @@index([imageId])
+  @@index([userId])
 }
 
 model ServiceDescription {
@@ -569,13 +601,19 @@ model SubService {
 }
 
 model Discount {
-  id           String        @id @default(cuid())
-  name         String        @unique
-  value        Int           @default(0)
-  expires      DateTime?
-  updatedAt    DateTime      @default(now()) @updatedAt
-  createdAt    DateTime      @default(now())
+  id        String    @id @default(cuid())
+  name      String    @unique
+  value     Int       @default(0)
+  expires   DateTime?
+  updatedAt DateTime  @default(now()) @updatedAt
+  createdAt DateTime  @default(now())
+
+  createdBy User?   @relation(fields: [userId], references: [id])
+  userId    String?
+
   ServiceCarts ServiceCart[]
+
+  @@index([userId])
 }
 
 model FAQ {
@@ -614,7 +652,11 @@ model CaseStudy {
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @default(now()) @updatedAt
 
+  createdBy User?   @relation(fields: [userId], references: [id])
+  userId    String?
+
   @@index([serviceId])
+  @@index([userId])
 }
 
 model GptPrompt {
@@ -696,6 +738,11 @@ model Event {
   tags        Tag[]
   updatedAt   DateTime    @default(now()) @updatedAt
   createdAt   DateTime    @default(now())
+
+  createdBy User?   @relation(fields: [userId], references: [id])
+  userId    String?
+
+  @@index([userId])
 }
 
 model Referral {
@@ -714,7 +761,11 @@ model Referral {
   updatedAt   DateTime         @default(now()) @updatedAt
   createdAt   DateTime         @default(now())
 
+  createdBy User?   @relation(fields: [userId], references: [id])
+  userId    String?
+
   @@unique([type, prefix], name: "referralId")
+  @@index([userId])
 }
 
 model Subscription {
@@ -745,7 +796,11 @@ model Credit {
   user    User   @relation(fields: [userId], references: [id])
   userId  String @unique
 
+  software   SoftwareProduct? @relation(fields: [softwareId], references: [id])
+  softwareId String?
+
   @@index([userId])
+  @@index([softwareId])
 }
 
 model AiRequestUsage {
