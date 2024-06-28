@@ -58,10 +58,10 @@ model User {
   emailVerified  DateTime?
   password       String            @default("")
   active         Boolean           @default(true)
-  image          Image?            @relation(fields: [imageId], references: [id])
+  image          Image?            @relation(fields: [imageId], references: [id], onDelete: SetNull)
   addressId      String?
   role           Role              @default(USER)
-  address        Address?          @relation(fields: [addressId], references: [id])
+  address        Address?          @relation(fields: [addressId], references: [id], onDelete: SetNull)
   accounts       Account[]
   blogs          Blog[]
   reviews        Review[]
@@ -86,15 +86,17 @@ model User {
   SoftwareProduct         SoftwareProduct[]
   SoftwareProductCategory SoftwareProductCategory[]
 
-  createdBy    User?          @relation("createdBy", fields: [creatorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  createdUsers User[]         @relation("createdBy")
-  creatorId    String?
-  BlogCategory BlogCategory[]
-  Service      Service[]
-  Discount     Discount[]
-  CaseStudy    CaseStudy[]
-  Event        Event[]
-  Referral     Referral[]
+  createdBy         User?               @relation("createdBy", fields: [creatorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdUsers      User[]              @relation("createdBy")
+  creatorId         String?
+  BlogCategory      BlogCategory[]
+  Service           Service[]
+  Discount          Discount[]
+  CaseStudy         CaseStudy[]
+  Event             Event[]
+  Referral          Referral[]
+  Organization      Organization[]
+  OrganizationOwner OrganizationOwner[]
 
   @@index([addressId])
   @@index([imageId])
@@ -103,7 +105,7 @@ model User {
 
 model Address {
   id            String       @id @default(cuid())
-  coordinates   Coordinates? @relation(fields: [coordinatesId], references: [id])
+  coordinates   Coordinates? @relation(fields: [coordinatesId], references: [id], onDelete: SetNull)
   street        String
   city          String
   state         String
@@ -125,6 +127,28 @@ model Coordinates {
   latitude  Decimal   @db.Decimal(8, 6)
   longitude Decimal   @db.Decimal(9, 6)
   Address   Address[]
+}
+
+model Organization {
+  id String @id @default(cuid())
+
+  name String
+
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @default(now()) @updatedAt
+  owners    OrganizationOwner[]
+  users     User[]
+}
+
+model OrganizationOwner {
+  id             String       @id @default(cuid())
+  Organization   Organization @relation(fields: [organizationId], references: [id])
+  User           User         @relation(fields: [userId], references: [id])
+  organizationId String
+  userId         String
+
+  @@index([organizationId])
+  @@index([userId])
 }
 
 model ProductCartItem {
@@ -298,10 +322,10 @@ model SoftwareProduct {
   blogId                    String?
   Subscription              Subscription[]
 
-  createdBy User?    @relation(fields: [userId], references: [id])
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
-  
-  Credits    Credit[]
+
+  Credits Credit[]
 
   @@index([softwareProductCategoryId])
   @@index([blogId])
@@ -351,7 +375,7 @@ model SoftwareProductCategory {
   parentId        String?
   SoftwareProduct SoftwareProduct[]
 
-  createdBy User?   @relation(fields: [userId], references: [id])
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
   @@index([parentId])
@@ -379,7 +403,7 @@ model Blog {
   publishDate     DateTime          @default(now())
   blogCategoryId  String?
   updatedAt       DateTime          @default(now()) @updatedAt
-  ctaProps         Json?
+  ctaProps        Json?
   SoftwareProduct SoftwareProduct[]
 
   @@index([userId])
@@ -396,7 +420,7 @@ model BlogCategory {
   Blog      Blog[]
   updatedAt DateTime       @default(now()) @updatedAt
 
-  createdBy User?   @relation(fields: [userId], references: [id])
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
   @@index([parentId])
@@ -426,8 +450,8 @@ model BlogComment {
 
 model BlogLike {
   id        String   @id @default(uuid())
-  user      User?    @relation(fields: [userId], references: [id])
-  blog      Blog     @relation(fields: [blogId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  blog      Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
   userId    String?
   blogId    String
   updatedAt DateTime @default(now()) @updatedAt
@@ -460,7 +484,7 @@ model Supplier {
 
 model Service {
   id                 String               @id @default(uuid())
-  image              Image?               @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  image              Image?               @relation(fields: [imageId], references: [id])
   title              String
   previewContent     String               @db.Text
   hourlyRate         Int
@@ -479,7 +503,7 @@ model Service {
   faqs               FAQ[]
   ServiceCartItem    ServiceCartItem[]
 
-  createdBy User?   @relation(fields: [userId], references: [id])
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
   @@index([imageId])
@@ -509,7 +533,7 @@ model Payment {
   invoice        String         @db.Text
   amount         Int
   quantity       Int?           @map("qunantity")
-  customer       User           @relation(fields: [userId], references: [id])
+  customer       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt      DateTime       @default(now())
   userId         String
   updatedAt      DateTime       @default(now()) @updatedAt
@@ -542,7 +566,7 @@ model Review {
   service          Service?   @relation(fields: [serviceId], references: [id])
   serviceId        String?
   prompt           GptPrompt? @relation(fields: [gptPromptId], references: [id])
-  user             User       @relation(fields: [userId], references: [id])
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId           String
   imageId          String?
   gptPromptId      String?
@@ -608,7 +632,7 @@ model Discount {
   updatedAt DateTime  @default(now()) @updatedAt
   createdAt DateTime  @default(now())
 
-  createdBy User?   @relation(fields: [userId], references: [id])
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
   ServiceCarts ServiceCart[]
@@ -652,7 +676,7 @@ model CaseStudy {
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @default(now()) @updatedAt
 
-  createdBy User?   @relation(fields: [userId], references: [id])
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
   @@index([serviceId])
@@ -739,7 +763,7 @@ model Event {
   updatedAt   DateTime    @default(now()) @updatedAt
   createdAt   DateTime    @default(now())
 
-  createdBy User?   @relation(fields: [userId], references: [id])
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
   @@index([userId])
@@ -761,7 +785,7 @@ model Referral {
   updatedAt   DateTime         @default(now()) @updatedAt
   createdAt   DateTime         @default(now())
 
-  createdBy User?   @relation(fields: [userId], references: [id])
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
   @@unique([type, prefix], name: "referralId")
@@ -771,7 +795,7 @@ model Referral {
 model Subscription {
   id                    String             @id @default(cuid())
   status                SubscriptionStatus
-  user                  User               @relation(fields: [userId], references: [id])
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   product               SoftwareProduct    @relation(fields: [subscriptionProductId], references: [id])
   subscriptionProductId String
   userId                String
@@ -793,7 +817,7 @@ enum SubscriptionStatus {
 model Credit {
   id      String @id @default(cuid())
   credits Float  @default(0)
-  user    User   @relation(fields: [userId], references: [id])
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId  String @unique
 
   software   SoftwareProduct? @relation(fields: [softwareId], references: [id])
@@ -815,7 +839,7 @@ model AiRequestUsage {
 
 model AiRequest {
   id               String           @id @default(cuid())
-  user             User?            @relation(fields: [userId], references: [id])
+  user             User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
   prompt           String
   requestFiles     AiRequestFile[]
   ip               String
@@ -1045,9 +1069,9 @@ model OauthAccessCode {
   scopes Json
   used   Boolean @default(false)
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  client        OauthClient @relation(fields: [oauthClientId], references: [id])
+  client        OauthClient @relation(fields: [oauthClientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   oauthClientId String
   userId        String
 
@@ -1062,9 +1086,9 @@ model OauthTokens {
   scopes       Json
   expiresAt    DateTime
 
-  client OauthClient @relation(fields: [oauthClientId], references: [id])
+  client OauthClient @relation(fields: [oauthClientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  user          User   @relation(fields: [userId], references: [id])
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId        String
   oauthClientId String
 
