@@ -97,6 +97,7 @@ model User {
   Referral          Referral[]
   Organization      Organization[]
   OrganizationOwner OrganizationOwner[]
+  UserAPIKeys       UserAPIKeys[]
 
   @@index([addressId])
   @@index([imageId])
@@ -1094,4 +1095,16 @@ model OauthTokens {
 
   @@index([userId])
   @@index([oauthClientId])
+}
+
+model UserAPIKeys {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  type      String
+  User      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId])
 }
