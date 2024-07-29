@@ -51,17 +51,20 @@ model VerificationToken {
 }
 
 model User {
-  id             String            @id @default(cuid())
-  firstName      String?
-  lastName       String?
-  email          String            @unique
-  emailVerified  DateTime?
-  password       String            @default("")
-  active         Boolean           @default(true)
-  image          Image?            @relation(fields: [imageId], references: [id], onDelete: SetNull)
-  addressId      String?
-  role           Role              @default(USER)
-  address        Address?          @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  id            String    @id @default(cuid())
+  firstName     String?
+  lastName      String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String    @default("")
+  active        Boolean   @default(true)
+  image         Image?    @relation(fields: [imageId], references: [id], onDelete: SetNull)
+  addressId     String?
+  role          Role      @default(USER)
+  address       Address?  @relation(fields: [addressId], references: [id], onDelete: SetNull)
+
+  data Json?
+
   accounts       Account[]
   blogs          Blog[]
   reviews        Review[]
@@ -86,16 +89,19 @@ model User {
   SoftwareProduct         SoftwareProduct[]
   SoftwareProductCategory SoftwareProductCategory[]
 
-  createdBy         User?               @relation("createdBy", fields: [creatorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  createdUsers      User[]              @relation("createdBy")
-  creatorId         String?
+  createdBy User?   @relation("createdBy", fields: [creatorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  creatorId String?
+
+  createdUsers User[] @relation("createdBy")
+
+  Organization Organization[]
+
   BlogCategory      BlogCategory[]
   Service           Service[]
   Discount          Discount[]
   CaseStudy         CaseStudy[]
   Event             Event[]
   Referral          Referral[]
-  Organization      Organization[]
   OrganizationOwner OrganizationOwner[]
   UserAPIKeys       UserAPIKeys[]
 
@@ -135,10 +141,19 @@ model Organization {
 
   name String
 
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @default(now()) @updatedAt
-  owners    OrganizationOwner[]
-  users     User[]
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @default(now()) @updatedAt
+  owners                  OrganizationOwner[]
+  users                   User[]
+  Blog                    Blog[]
+  BlogCategory            BlogCategory[]
+  Service                 Service[]
+  Discount                Discount[]
+  CaseStudy               CaseStudy[]
+  Event                   Event[]
+  Referral                Referral[]
+  SoftwareProduct         SoftwareProduct[]
+  SoftwareProductCategory SoftwareProductCategory[]
 }
 
 model OrganizationOwner {
@@ -326,11 +341,15 @@ model SoftwareProduct {
   createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
+  Organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
   Credits Credit[]
 
   @@index([softwareProductCategoryId])
   @@index([blogId])
   @@index([userId])
+  @@index([organizationId])
 }
 
 model SubscriptionModel {
@@ -376,11 +395,14 @@ model SoftwareProductCategory {
   parentId        String?
   SoftwareProduct SoftwareProduct[]
 
-  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId    String?
+  createdBy      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId         String?
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
 
   @@index([parentId])
   @@index([userId])
+  @@index([organizationId])
 }
 
 model Blog {
@@ -407,9 +429,13 @@ model Blog {
   ctaProps        Json?
   SoftwareProduct SoftwareProduct[]
 
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
   @@index([userId])
   @@index([blogTemplateId])
   @@index([blogCategoryId])
+  @@index([organizationId])
 }
 
 model BlogCategory {
@@ -424,8 +450,12 @@ model BlogCategory {
   createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
   @@index([parentId])
   @@index([userId])
+  @@index([organizationId])
 }
 
 model BlogTemplate {
@@ -507,8 +537,12 @@ model Service {
   createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
   @@index([imageId])
   @@index([userId])
+  @@index([organizationId])
 }
 
 model ServiceDescription {
@@ -636,9 +670,12 @@ model Discount {
   createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
-  ServiceCarts ServiceCart[]
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+  ServiceCarts   ServiceCart[]
 
   @@index([userId])
+  @@index([organizationId])
 }
 
 model FAQ {
@@ -680,8 +717,12 @@ model CaseStudy {
   createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
   @@index([serviceId])
   @@index([userId])
+  @@index([organizationId])
 }
 
 model GptPrompt {
@@ -767,7 +808,11 @@ model Event {
   createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
   @@index([userId])
+  @@index([organizationId])
 }
 
 model Referral {
@@ -789,8 +834,12 @@ model Referral {
   createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
   @@unique([type, prefix], name: "referralId")
   @@index([userId])
+  @@index([organizationId])
 }
 
 model Subscription {
