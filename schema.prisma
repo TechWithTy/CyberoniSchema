@@ -104,6 +104,7 @@ model User {
   Referral          Referral[]
   OrganizationOwner OrganizationOwner[]
   UserAPIKeys       UserAPIKeys[]
+  Embeddings        Embeddings[]
 
   @@index([addressId])
   @@index([imageId])
@@ -341,7 +342,7 @@ model SoftwareProduct {
   createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
 
-  Organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   organizationId String?
 
   Credits Credit[]
@@ -355,6 +356,7 @@ model SoftwareProduct {
 model SubscriptionModel {
   id                String             @id @default(cuid())
   name              String
+  description       String?            @db.Text()
   price             Int
   features          Json?
   credits           Int                @default(0)
@@ -1152,6 +1154,16 @@ model UserAPIKeys {
   type      String
   User      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+}
+
+model Embeddings {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
