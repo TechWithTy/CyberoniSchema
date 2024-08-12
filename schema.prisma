@@ -361,6 +361,8 @@ model SubscriptionModel {
   features          Json?
   credits           Int                @default(0)
   profit            Float              @default(0)
+  workflows         Json?
+  chatBots          Json?
   type              SubscriptionPeriod
   status            SubscriptionStatus
   softwareProduct   SoftwareProduct    @relation(fields: [softwareProductId], references: [id], onDelete: Cascade)
@@ -633,6 +635,7 @@ model Image {
   Event              Event[]
   ServiceDescription ServiceDescription[]
   SoftwareProduct    SoftwareProduct[]
+  caseStudies        CaseStudy[]
 }
 
 model SubService {
@@ -693,28 +696,28 @@ model FAQ {
 }
 
 model CaseStudy {
-  id                  String       @id @default(uuid())
+  id                  String   @id @default(uuid())
   title               String
-  type                Service?     @relation(fields: [serviceId], references: [id])
-  subServices         SubService[]
-  preview             String       @db.Text
-  problemStatement    String       @db.Text
-  userResearch        String       @db.Text
-  userProblems        Json
-  possibleSolutions   Json
-  goals               Json
-  images              Json //image 
-  uniqueFeatures      String       @db.Text
-  keyLearning         String       @db.Text
-  userPersonas        Json
-  competitiveAnalysis Json         @map("competetiveAnalysis")
-  wireFrames          Json?
-  hifiDesign          Json?
-  userFlow            Json?
-  architecture        Json?
-  serviceId           String?
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @default(now()) @updatedAt
+  preview             String   @db.Text
+  problemStatement    Json?
+  primaryResearch     Json?   
+  userResearch        Json?   
+  userProblems        Json?    
+  possibleSolutions   Json?
+  goals               Json?
+  results             Json?
+  uniqueFeatures      Json?
+  keyLearning         Json?  
+  userPersonas        Json?
+  competitorAnalysis  Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @default(now()) @updatedAt
+
+  images Image[]
+
+  type        Service?     @relation(fields: [serviceId], references: [id])
+  subServices SubService[]
+  serviceId   String?
 
   createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
