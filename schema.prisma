@@ -829,6 +829,7 @@ model Referral {
   description String           @db.Text
   priority    ReferralPriority @default(LOW)
   redirect    String           @db.Text
+  mobileRedirect String?       @db.Text
   link        String
   fallback    String
   click       Int

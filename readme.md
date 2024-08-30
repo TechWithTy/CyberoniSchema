@@ -8,12 +8,16 @@ installation: `npm i @techwithty/cyberoni-schema`
 
 ### How to install
 
+npm install prisma | Not npm install @prisma/client
+
 Update Environment with Githhub personal Access token follow instructions here to generate token:
 
 required permission: read:packages
 
 add token to .env file
 `NPM_TOKEN=ghp_xxxxxxxxxxxxxxxxxxx`
+
+`export NPM_TOKEN={token}`
 
 To add an environment variable like NPM_TOKEN to different terminals such as PowerShell, Bash, Zsh, and other shell environments, you'll need to follow specific instructions for each terminal. Here's how you can do it:
 
