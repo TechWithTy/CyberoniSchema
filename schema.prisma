@@ -624,6 +624,7 @@ model Image {
   updatedAt          DateTime             @default(now()) @updatedAt
   createdAt          DateTime             @default(now())
   products           Product[]
+  caseStudies        CaseStudy[]
   blogs              Blog[]
   Service            Service[]
   SubService         SubService[]
@@ -700,10 +701,12 @@ model CaseStudy {
   preview             String       @db.Text
   problemStatement    String       @db.Text
   userResearch        String       @db.Text
+  results             Json
   userProblems        Json
   possibleSolutions   Json
   goals               Json
-  images              Json //image 
+  // images              Json //image
+  images              Image[]
   uniqueFeatures      String       @db.Text
   keyLearning         String       @db.Text
   userPersonas        Json
