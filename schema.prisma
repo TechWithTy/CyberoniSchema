@@ -1,18 +1,19 @@
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["fullTextIndex", "fullTextSearch"]
-  binaryTargets   = ["native", "rhel-openssl-1.0.x"]
-}
-
 datasource db {
   provider     = "mysql"
   url          = env("DATABASE_URL_MAIN")
   relationMode = "prisma"
 }
 
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+  binaryTargets   = ["native", "rhel-openssl-1.0.x"]
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
+  type              String
   provider          String
   providerAccountId String
   refresh_token     String? @db.Text
@@ -23,7 +24,6 @@ model Account {
   id_token          String? @db.Text
   session_state     String?
   password          String?
-  type              String
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
@@ -34,9 +34,9 @@ model Session {
   sessionToken String     @unique
   userId       String
   expires      DateTime
-  guruAgentId  String?
   user         User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   guruAgent    GuruAgent? @relation(fields: [guruAgentId], references: [id])
+  guruAgentId  String?
 
   @@index([userId])
   @@index([guruAgentId])
@@ -51,28 +51,31 @@ model VerificationToken {
 }
 
 model User {
-  id                      String                    @id @default(cuid())
-  firstName               String?
-  lastName                String?
-  email                   String                    @unique
-  addressId               String?
-  role                    Role                      @default(USER)
-  imageId                 String?
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime                  @default(now()) @updatedAt
-  emailVerified           DateTime?
-  password                String                    @default("")
-  active                  Boolean                   @default(true)
-  creatorId               String?
-  data                    Json?
-  image                   Image?                    @relation(fields: [imageId], references: [id], onDelete: SetNull)
-  address                 Address?                  @relation(fields: [addressId], references: [id], onDelete: SetNull)
-  accounts                Account[]
-  blogs                   Blog[]
-  reviews                 Review[]
-  CartItem                ProductCartItem[]
-  ApiCredentials          ApiCredential[]
-  BlogLike                BlogLike[]
+  id            String    @id @default(cuid())
+  firstName     String?
+  lastName      String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String    @default("")
+  active        Boolean   @default(true)
+  image         Image?    @relation(fields: [imageId], references: [id], onDelete: SetNull)
+  addressId     String?
+  role          Role      @default(USER)
+  address       Address?  @relation(fields: [addressId], references: [id], onDelete: SetNull)
+
+  data Json?
+
+  accounts       Account[]
+  blogs          Blog[]
+  reviews        Review[]
+  imageId        String?
+  CartItem       ProductCartItem[]
+  ApiCredentials ApiCredential[]
+  BlogLike       BlogLike[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
   Session                 Session[]
   Payment                 Payment[]
   BlogComment             BlogComment[]
@@ -85,18 +88,23 @@ model User {
   OauthAccessCode         OauthAccessCode[]
   SoftwareProduct         SoftwareProduct[]
   SoftwareProductCategory SoftwareProductCategory[]
-  createdBy               User?                     @relation("createdBy", fields: [creatorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  createdUsers            User[]                    @relation("createdBy")
-  Organization            Organization[]
-  BlogCategory            BlogCategory[]
-  Service                 Service[]
-  Discount                Discount[]
-  CaseStudy               CaseStudy[]
-  Event                   Event[]
-  Referral                Referral[]
-  OrganizationOwner       OrganizationOwner[]
-  UserAPIKeys             UserAPIKeys[]
-  Embeddings              Embeddings[]
+
+  createdBy User?   @relation("createdBy", fields: [creatorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  creatorId String?
+
+  createdUsers User[] @relation("createdBy")
+
+  Organization Organization[]
+
+  BlogCategory      BlogCategory[]
+  Service           Service[]
+  Discount          Discount[]
+  CaseStudy         CaseStudy[]
+  Event             Event[]
+  Referral          Referral[]
+  OrganizationOwner OrganizationOwner[]
+  UserAPIKeys       UserAPIKeys[]
+  Embeddings        Embeddings[]
 
   @@index([addressId])
   @@index([imageId])
@@ -105,17 +113,17 @@ model User {
 
 model Address {
   id            String       @id @default(cuid())
+  coordinates   Coordinates? @relation(fields: [coordinatesId], references: [id], onDelete: SetNull)
   street        String
   city          String
   state         String
   zipCode       String
   country       String
-  coordinatesId String?
   createdAt     DateTime     @default(now())
   updateAt      DateTime     @default(now()) @updatedAt
-  coordinates   Coordinates? @relation(fields: [coordinatesId], references: [id], onDelete: SetNull)
   User          User[]
   Property      Property[]
+  coordinatesId String?
   GuruUser      GuruAgent[]
   Order         Order[]
 
@@ -130,8 +138,10 @@ model Coordinates {
 }
 
 model Organization {
-  id                      String                    @id @default(cuid())
-  name                    String
+  id String @id @default(cuid())
+
+  name String
+
   createdAt               DateTime                  @default(now())
   updatedAt               DateTime                  @default(now()) @updatedAt
   owners                  OrganizationOwner[]
@@ -149,10 +159,10 @@ model Organization {
 
 model OrganizationOwner {
   id             String       @id @default(cuid())
-  organizationId String
-  userId         String
   Organization   Organization @relation(fields: [organizationId], references: [id])
   User           User         @relation(fields: [userId], references: [id])
+  organizationId String
+  userId         String
 
   @@index([organizationId])
   @@index([userId])
@@ -162,9 +172,9 @@ model ProductCartItem {
   id        String  @id @default(uuid())
   quantity  Int
   productId String
-  userId    String
   product   Product @relation(fields: [productId], references: [id])
   user      User    @relation(fields: [userId], references: [id])
+  userId    String
 
   @@index([productId])
   @@index([userId])
@@ -172,12 +182,12 @@ model ProductCartItem {
 
 model ServiceCart {
   id             String            @id @default(uuid())
+  user           User?             @relation(fields: [userId], references: [id])
   userId         String?
-  status         ServiceCartStatus @default(PENDING)
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @default(now()) @updatedAt
-  user           User?             @relation(fields: [userId], references: [id])
   items          ServiceCartItem[]
+  status         ServiceCartStatus @default(PENDING)
   ServicePayment ServicePayment[]
   discounts      Discount[]
 
@@ -186,14 +196,14 @@ model ServiceCart {
 
 model ServiceCartItem {
   id            String       @id @default(uuid())
+  service       Service?     @relation(fields: [serviceId], references: [id])
   amount        Int          @default(0)
-  serviceId     String?
-  serviceCartId String
+  addons        SubService[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @default(now()) @updatedAt
-  service       Service?     @relation(fields: [serviceId], references: [id])
-  addons        SubService[]
+  serviceId     String?
   ServiceCart   ServiceCart  @relation(fields: [serviceCartId], references: [id])
+  serviceCartId String
 
   @@index([serviceId])
   @@index([serviceCartId])
@@ -203,12 +213,31 @@ model ServicePayment {
   id            String        @id @default(uuid())
   paymentId     String        @unique
   status        PaymentStatus @default(PENDING)
-  serviceCartId String
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @default(now()) @updatedAt
   order         ServiceCart   @relation(fields: [serviceCartId], references: [id])
+  serviceCartId String
 
   @@index([serviceCartId])
+}
+
+enum ServiceCartStatus {
+  ABANDONED
+  EMPTY
+  PENDING
+  PAID
+}
+
+enum ServiceOrderStatus {
+  DELIVERED
+  INPROGRESS
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  DISPUTED
 }
 
 model ApiCredential {
@@ -217,10 +246,10 @@ model ApiCredential {
   tokenExpiry        DateTime
   refreshToken       String   @db.Text
   refreshTokenExpiry DateTime
-  userId             String
+  user               User     @relation(fields: [userId], references: [id])
   createdAt          DateTime @default(now())
   updatedAt          DateTime @default(now()) @updatedAt
-  user               User     @relation(fields: [userId], references: [id])
+  userId             String
 
   @@index([userId])
 }
@@ -232,25 +261,25 @@ model Product {
   status               ProductStatus     @default(SOLDOUT)
   ratings              Int?
   inventory            Int
-  description          String            @db.Text
-  price                Int
-  subcategory          String?
-  displayPrice         Int
   productBreakdown     String?
-  profitMargin         Int
   shippingReturnPolicy String            @db.Text
-  amazonProductId      String?
-  aliExpressId         String?
-  createdAt            DateTime          @default(now())
-  productCategoryId    String?
-  updatedAt            DateTime          @default(now()) @updatedAt
+  description          String            @db.Text
   tags                 Tag[]
+  price                Int
+  profitMargin         Int
+  displayPrice         Int
   category             ProductCategory?  @relation(fields: [productCategoryId], references: [id])
+  subcategory          String?
   images               Image[]
   cart                 ProductCartItem[]
   suppliers            Supplier[]
   reviews              Review[]
+  amazonProductId      String?
+  aliExpressId         String?
   Order                Order[]
+  updatedAt            DateTime          @default(now()) @updatedAt
+  createdAt            DateTime          @default(now())
+  productCategoryId    String?
 
   @@index([amazonProductId])
   @@index([aliExpressId])
@@ -260,9 +289,9 @@ model Product {
 model ProductCategory {
   id       String            @id @default(cuid())
   name     String
-  parentId String?
   children ProductCategory[] @relation("Subcategories")
   parent   ProductCategory?  @relation("Subcategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentId String?
   Product  Product[]
 
   @@index([parentId])
@@ -270,15 +299,15 @@ model ProductCategory {
 
 model Order {
   id        String      @id @default(uuid())
-  addressId String
-  productId String
-  status    OrderStatus @default(CREATED)
-  userId    String
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @default(now()) @updatedAt
   user      User        @relation(fields: [userId], references: [id])
   product   Product     @relation(fields: [productId], references: [id])
   address   Address     @relation(fields: [addressId], references: [id])
+  userId    String
+  productId String
+  addressId String
+  status    OrderStatus @default(CREATED)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @default(now()) @updatedAt
 
   @@index([productId])
   @@index([userId])
@@ -286,30 +315,37 @@ model Order {
 }
 
 model SoftwareProduct {
-  id                        String                   @id @default(cuid())
-  title                     String
-  subTitle                  String
-  description               String?
-  pricing                   SoftwarePricing
-  link                      String?                  @db.LongText
-  githubLink                String?                  @db.LongText
-  status                    SoftwareProductStatus
-  createdAt                 DateTime                 @default(now())
-  updatedAt                 DateTime                 @updatedAt
+  id          String                @id @default(cuid())
+  title       String
+  subTitle    String
+  description String?
+  images      Image[]
+  tags        Tag[]
+  pricing     SoftwarePricing
+  link        String?               @db.LongText
+  githubLink  String?               @db.LongText
+  status      SoftwareProductStatus
+
+  internal Boolean @default(false)
+
+  subscriptionModel SubscriptionModel[]
+  blog              Blog?               @relation(fields: [blogId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category                  SoftwareProductCategory? @relation(fields: [softwareProductCategoryId], references: [id])
   softwareProductCategoryId String?
   blogId                    String?
-  internal                  Boolean                  @default(false)
-  userId                    String?
-  organizationId            String?
-  images                    Image[]
-  tags                      Tag[]
-  subscriptionModel         SubscriptionModel[]
-  blog                      Blog?                    @relation(fields: [blogId], references: [id])
-  category                  SoftwareProductCategory? @relation(fields: [softwareProductCategoryId], references: [id])
   Subscription              Subscription[]
-  createdBy                 User?                    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  Organization              Organization?            @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  Credits                   Credit[]
+
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
+  Credits Credit[]
 
   @@index([softwareProductCategoryId])
   @@index([blogId])
@@ -320,853 +356,17 @@ model SoftwareProduct {
 model SubscriptionModel {
   id                String             @id @default(cuid())
   name              String
+  description       String?            @db.Text()
   price             Int
   features          Json?
-  type              SubscriptionPeriod
-  status            SubscriptionStatus
-  softwareProductId String
   credits           Int                @default(0)
   profit            Float              @default(0)
-  description       String?            @db.Text
-  workflows         Json?
-  chatBots          Json?
+  type              SubscriptionPeriod
+  status            SubscriptionStatus
   softwareProduct   SoftwareProduct    @relation(fields: [softwareProductId], references: [id], onDelete: Cascade)
+  softwareProductId String
 
   @@index([softwareProductId])
-}
-
-model SoftwareProductCategory {
-  id              String                    @id @default(cuid())
-  name            String
-  parentId        String?
-  userId          String?
-  organizationId  String?
-  children        SoftwareProductCategory[] @relation("Subcategories")
-  parent          SoftwareProductCategory?  @relation("Subcategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  SoftwareProduct SoftwareProduct[]
-  createdBy       User?                     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  Organization    Organization?             @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-
-  @@index([parentId])
-  @@index([userId])
-  @@index([organizationId])
-}
-
-model Blog {
-  id              String            @id @default(uuid())
-  title           String
-  subTitle        String
-  description     String            @db.Text
-  featured        Boolean           @default(false)
-  date            DateTime          @default(now())
-  content         String            @db.LongText
-  userId          String
-  Views           Int               @default(0)
-  blogTemplateId  String?
-  publishDate     DateTime          @default(now())
-  blogCategoryId  String?
-  updatedAt       DateTime          @default(now()) @updatedAt
-  ctaProps        Json?
-  organizationId  String?
-  images          Image[]
-  author          User              @relation(fields: [userId], references: [id])
-  tags            Tag[]
-  template        BlogTemplate?     @relation(fields: [blogTemplateId], references: [id])
-  category        BlogCategory?     @relation(fields: [blogCategoryId], references: [id])
-  Likes           BlogLike[]
-  Comments        BlogComment[]
-  SoftwareProduct SoftwareProduct[]
-  Organization    Organization?     @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-  @@index([blogTemplateId])
-  @@index([blogCategoryId])
-  @@index([organizationId])
-}
-
-model BlogCategory {
-  id             String         @id @default(cuid())
-  name           String
-  parentId       String?
-  updatedAt      DateTime       @default(now()) @updatedAt
-  userId         String?
-  organizationId String?
-  children       BlogCategory[] @relation("SubCategories")
-  parent         BlogCategory?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  Blog           Blog[]
-  createdBy      User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
-  Organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-
-  @@index([parentId])
-  @@index([userId])
-  @@index([organizationId])
-}
-
-model BlogTemplate {
-  id       String @id @default(uuid())
-  name     String
-  template String @db.Text
-  Blog     Blog[]
-}
-
-model BlogComment {
-  id        String   @id @default(uuid())
-  comment   String   @db.Text
-  blogId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  userId    String
-  Blog      Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
-  User      User     @relation(fields: [userId], references: [id])
-
-  @@index([blogId])
-  @@index([userId])
-}
-
-model BlogLike {
-  userId    String?
-  blogId    String
-  updatedAt DateTime @default(now()) @updatedAt
-  id        String   @id @default(uuid())
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  blog      Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([blogId])
-}
-
-model Supplier {
-  id                      String    @id @default(uuid())
-  baseShippingPrice       Int
-  supplierName            String
-  supplierStatus          String?
-  shippingWeight          Int?
-  listPrice               Int?
-  salePrice               Int?
-  availability            String?
-  supplierUrl             String    @db.Text
-  supplierEmail           String?
-  supplierWhatsApp        String?
-  supplierWrittenComments String?
-  height                  Int
-  length                  Int
-  weight                  Int
-  width                   Int
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @default(now()) @updatedAt
-  products                Product[]
-}
-
-model Service {
-  id                 String               @id @default(uuid())
-  title              String
-  previewContent     String               @db.Text
-  hourlyRate         Int
-  valueBrought       Json
-  skillsUsed         Json
-  htmlEmbed          String?
-  imageId            String?
-  featured           Boolean              @default(false)
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @default(now()) @updatedAt
-  userId             String?
-  organizationId     String?
-  image              Image?               @relation(fields: [imageId], references: [id])
-  reviews            Review[]
-  tags               Tag[]
-  SubServices        SubService[]
-  ServiceDescription ServiceDescription[]
-  CaseStudies        CaseStudy[]
-  faqs               FAQ[]
-  ServiceCartItem    ServiceCartItem[]
-  createdBy          User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
-  Organization       Organization?        @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-
-  @@index([imageId])
-  @@index([userId])
-  @@index([organizationId])
-}
-
-model ServiceDescription {
-  id          String   @id @default(uuid())
-  title       String
-  content     String   @db.LongText
-  imageOnLeft Boolean  @default(true)
-  imageId     String?
-  serviceId   String
-  updatedAt   DateTime @default(now()) @updatedAt
-  image       Image?   @relation(fields: [imageId], references: [id], onDelete: SetNull)
-  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-
-  @@index([serviceId])
-  @@index([imageId])
-}
-
-model Payment {
-  id             String         @id @default(uuid())
-  subscriptionId String?
-  invoice        String         @db.Text
-  amount         Int
-  createdAt      DateTime       @default(now())
-  userId         String
-  updatedAt      DateTime       @default(now()) @updatedAt
-  purpose        PaymentPurpose @default(PRODUCT)
-  quantity       Int?           @map("qunantity")
-  subscription   Subscription?  @relation(fields: [subscriptionId], references: [id])
-  customer       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([subscriptionId])
-}
-
-model Review {
-  id               String     @id @default(uuid())
-  name             String
-  title            String
-  content          String     @db.Text
-  link             String     @db.Text
-  rating           Int
-  productId        String?
-  reviewType       ReviewType @default(MAIN)
-  serviceId        String?
-  userId           String
-  verifiedCustomer Boolean    @default(false)
-  gptPromptId      String?
-  imageId          String?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @default(now()) @updatedAt
-  image            Image?     @relation(fields: [imageId], references: [id])
-  tags             Tag[]
-  product          Product?   @relation(fields: [productId], references: [id])
-  service          Service?   @relation(fields: [serviceId], references: [id])
-  prompt           GptPrompt? @relation(fields: [gptPromptId], references: [id])
-  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([productId])
-  @@index([serviceId])
-  @@index([userId])
-  @@index([imageId])
-  @@index([gptPromptId])
-}
-
-model Image {
-  id                 String               @id @default(uuid())
-  name               String?
-  src                String               @db.Text
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @default(now()) @updatedAt
-  products           Product[]
-  blogs              Blog[]
-  Service            Service[]
-  SubService         SubService[]
-  Review             Review[]
-  GptPrompt          GptPrompt[]
-  User               User[]
-  Event              Event[]
-  ServiceDescription ServiceDescription[]
-  SoftwareProduct    SoftwareProduct[]
-}
-
-model SubService {
-  id                                        String            @id @default(uuid())
-  title                                     String
-  pricingModel                              PricingModel      @default(DEFAULT)
-  serviceDeliverables                       Json?
-  serviceUsageScore                         Int
-  description                               String            @db.Text
-  department                                String
-  estimated_hours_times_fifty_percent       Int
-  estimated_hours_times_one_hundred_percent Int
-  skillLevel                                String
-  complexity                                Int
-  overheadCost                              Int
-  imageId                                   String?
-  serviceId                                 String
-  updatedAt                                 DateTime          @default(now()) @updatedAt
-  image                                     Image?            @relation(fields: [imageId], references: [id])
-  tags                                      Tag[]
-  service                                   Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  ServiceCartItem                           ServiceCartItem[]
-  CaseStudies                               CaseStudy[]
-
-  @@index([imageId])
-  @@index([serviceId])
-}
-
-model Discount {
-  id             String        @id @default(cuid())
-  name           String        @unique
-  value          Int           @default(0)
-  expires        DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @default(now()) @updatedAt
-  userId         String?
-  organizationId String?
-  createdBy      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  ServiceCarts   ServiceCart[]
-
-  @@index([userId])
-  @@index([organizationId])
-}
-
-model FAQ {
-  id        String   @id @default(uuid())
-  question  String   @db.Text
-  answer    String   @db.Text
-  serviceId String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  Service   Service? @relation(fields: [serviceId], references: [id])
-
-  @@index([serviceId])
-}
-
-model CaseStudy {
-  id                 String        @id @default(uuid())
-  title              String
-  preview            String        @db.Text
-  problemStatement   Json?
-  userProblems       Json?
-  possibleSolutions  Json?
-  goals              Json?
-  uniqueFeatures     Json?
-  keyLearning        Json?
-  userPersonas       Json?
-  userResearch       Json?
-  serviceId          String?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @default(now()) @updatedAt
-  userId             String?
-  organizationId     String?
-  competitorAnalysis Json?
-  primaryResearch    Json?
-  results            Json?
-  type               Service?      @relation(fields: [serviceId], references: [id])
-  subServices        SubService[]
-  createdBy          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  Organization       Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-
-  @@index([serviceId])
-  @@index([userId])
-  @@index([organizationId])
-}
-
-model GptPrompt {
-  id                   String       @id @default(uuid())
-  description          String       @db.Text
-  prompt               String?      @db.Text
-  temperature          Int?         @default(0)
-  max_tokens           Int?         @default(0)
-  top_p                Int?         @default(0)
-  best_of              Int?         @default(0)
-  frequency_penalty    Int?         @default(0)
-  presence_penalty     Int?         @default(0)
-  stop                 Json?
-  timesUsed            Int?         @default(0)
-  timesIntegrated      Int?         @default(0)
-  costPerToken         Int?         @default(0)
-  profitMargin         Int?         @default(0)
-  imageId              String?
-  botUrl               String?      @db.Text
-  completions          Int?         @default(1)
-  model                String?      @default("gpt-3.5-turbo")
-  pricing              GptPricing   @default(LOW)
-  title                String       @default("")
-  conversationStarters Json?
-  gptCategoryId        String?
-  seed                 Int?
-  startPhrase          String?
-  steps                Json?
-  stream               Boolean      @default(true)
-  sysCommands          Json?
-  toolChoice           String?
-  variables            Json?
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @default(now()) @updatedAt
-  tools                GptTool[]
-  tags                 Tag[]
-  image                Image[]
-  reviews              Review[]
-  category             GptCategory? @relation(fields: [gptCategoryId], references: [id])
-  AiRequest            AiRequest[]
-
-  @@index([gptCategoryId])
-}
-
-model GptCategory {
-  id       String        @id @default(cuid())
-  name     String
-  parentId String?
-  children GptCategory[] @relation("SubCategories")
-  parent   GptCategory?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  prompts  GptPrompt[]
-
-  @@index([parentId])
-}
-
-model GptTool {
-  id          String     @id @default(cuid())
-  name        String
-  description String?
-  parameters  String?
-  gptPromptId String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @default(now()) @updatedAt
-  GptPrompt   GptPrompt? @relation(fields: [gptPromptId], references: [id])
-
-  @@index([gptPromptId])
-}
-
-model Event {
-  id             String        @id @default(uuid())
-  name           String
-  date           DateTime
-  location       String        @db.Text
-  description    String        @db.Text
-  eventLink      String        @db.Text
-  status         EventStatus
-  isVirtual      Boolean
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @default(now()) @updatedAt
-  userId         String?
-  organizationId String?
-  image          Image[]
-  tags           Tag[]
-  createdBy      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-  @@index([organizationId])
-}
-
-model Referral {
-  id             String           @id @default(uuid())
-  prefix         String?
-  type           ReferralType     @default(REDIRECT)
-  campaignId     String
-  expires        DateTime?
-  description    String           @db.Text
-  priority       ReferralPriority @default(LOW)
-  redirect       String           @db.Text
-  link           String
-  fallback       String
-  click          Int
-  utmProps       Json?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @default(now()) @updatedAt
-  userId         String?
-  organizationId String?
-  mobileRedirect String?          @db.Text
-  createdBy      User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
-  Organization   Organization?    @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-
-  @@unique([type, prefix], name: "referralId")
-  @@index([userId])
-  @@index([organizationId])
-}
-
-model Subscription {
-  id                    String             @id @default(cuid())
-  status                SubscriptionStatus
-  subscriptionProductId String
-  userId                String
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
-  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product               SoftwareProduct    @relation(fields: [subscriptionProductId], references: [id])
-  Payment               Payment[]
-
-  @@index([subscriptionProductId])
-  @@index([userId])
-}
-
-model Credit {
-  id         String           @id @default(cuid())
-  credits    Float            @default(0)
-  userId     String           @unique
-  softwareId String?
-  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  software   SoftwareProduct? @relation(fields: [softwareId], references: [id])
-
-  @@index([userId])
-  @@index([softwareId])
-}
-
-model AiRequestUsage {
-  id           String      @id @default(cuid())
-  cost         Float       @default(0)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  inputTokens  Int?        @default(0)
-  outputTokens Int?        @default(0)
-  AiRequest    AiRequest[]
-}
-
-model AiRequest {
-  id               String           @id @default(cuid())
-  prompt           String
-  ip               String
-  duration         Float
-  response         String           @db.LongText
-  userId           String?
-  gptPromptId      String?
-  aiRequestUsageId String
-  user             User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
-  requestFiles     AiRequestFile[]
-  gptPromptUsed    GptPrompt?       @relation(fields: [gptPromptId], references: [id])
-  usage            AiRequestUsage   @relation(fields: [aiRequestUsageId], references: [id])
-  responseFiles    AiResponseFile[]
-
-  @@index([userId])
-  @@index([gptPromptId])
-  @@index([aiRequestUsageId])
-}
-
-model AiRequestFile {
-  id          String     @id @default(cuid())
-  name        String
-  src         String
-  aiRequestId String?
-  AiRequest   AiRequest? @relation(fields: [aiRequestId], references: [id])
-
-  @@index([aiRequestId])
-}
-
-model AiResponseFile {
-  id          String     @id @default(cuid())
-  name        String
-  src         String
-  aiRequestId String?
-  AiRequest   AiRequest? @relation(fields: [aiRequestId], references: [id])
-
-  @@index([aiRequestId])
-}
-
-model AiCost {
-  id        String     @id @default(cuid())
-  modelId   String     @unique
-  modelType String
-  provider  AiProvider
-  costType  AiCostType
-  createdAt DateTime   @default(now())
-  input     Decimal?
-  output    Decimal
-  updatedAt DateTime   @updatedAt
-}
-
-model Tag {
-  id              String            @id @default(uuid())
-  name            String            @unique
-  products        Product[]
-  blog            Blog[]
-  reviews         Review[]
-  services        Service[]
-  subServices     SubService[]
-  prompts         GptPrompt[]
-  events          Event[]
-  SoftwareProduct SoftwareProduct[]
-}
-
-model Property {
-  id           String         @id @default(uuid())
-  title        String         @db.Text
-  type         PropertyType
-  featured     Boolean        @default(false)
-  bedroomCount Int
-  bathCount    Float
-  fee          String
-  process      String         @db.Text
-  link         String?        @db.Text
-  deposit      String         @db.Text
-  addressId    String
-  mapUrl       String         @db.Text
-  additional   String?        @db.Text
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @default(now()) @updatedAt
-  address      Address        @relation(fields: [addressId], references: [id])
-  files        PropertyFile[]
-
-  @@index([addressId])
-  @@fulltext([title])
-  @@fulltext([title, fee, deposit, additional, process])
-}
-
-model PropertyFile {
-  id         String    @id @default(uuid())
-  name       String
-  src        String    @db.Text
-  type       String
-  propertyId String?
-  feeSheet   Boolean   @default(false)
-  Property   Property? @relation(fields: [propertyId], references: [id])
-
-  @@index([propertyId])
-}
-
-model GuruAgent {
-  id            String    @id @default(uuid())
-  role          GuruRole  @default(AGENT)
-  firstName     String
-  lastName      String
-  phone         String?
-  email         String    @unique
-  title         String
-  notes         String?
-  password      String
-  addressId     String
-  emailVerified DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
-  address       Address?  @relation(fields: [addressId], references: [id])
-  Session       Session[]
-
-  @@index([addressId])
-}
-
-model OauthClient {
-  id              String            @id @default(cuid())
-  secret          String
-  scopes          Json
-  name            String
-  redirectUris    Json
-  OauthTokens     OauthTokens[]
-  OauthAccessCode OauthAccessCode[]
-}
-
-model OauthAccessCode {
-  id            String      @id @default(cuid())
-  code          String
-  scopes        Json
-  used          Boolean     @default(false)
-  oauthClientId String
-  userId        String
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  client        OauthClient @relation(fields: [oauthClientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([oauthClientId])
-  @@index([userId])
-}
-
-model OauthTokens {
-  id            String      @id @default(cuid())
-  refreshToken  String      @db.LongText
-  accessToken   String      @db.LongText
-  scopes        Json
-  expiresAt     DateTime
-  userId        String
-  oauthClientId String
-  client        OauthClient @relation(fields: [oauthClientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@index([userId])
-  @@index([oauthClientId])
-}
-
-model UserAPIKeys {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  type      String
-  userId    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  User      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-}
-
-model Embeddings {
-  id        String   @id @default(cuid())
-  userId    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-}
-
-model BlogToImage {
-  A String
-  B String
-
-  @@unique([A, B], map: "_BlogToImage_AB_unique")
-  @@index([B], map: "_BlogToImage_B_index")
-  @@map("_BlogToImage")
-}
-
-model BlogToTag {
-  A String
-  B String
-
-  @@unique([A, B], map: "_BlogToTag_AB_unique")
-  @@index([B], map: "_BlogToTag_B_index")
-  @@map("_BlogToTag")
-}
-
-model CaseStudyToImage {
-  A String
-  B String
-
-  @@unique([A, B], map: "_CaseStudyToImage_AB_unique")
-  @@index([B], map: "_CaseStudyToImage_B_index")
-  @@map("_CaseStudyToImage")
-}
-
-model CaseStudyToSubService {
-  A String
-  B String
-
-  @@unique([A, B], map: "_CaseStudyToSubService_AB_unique")
-  @@index([B], map: "_CaseStudyToSubService_B_index")
-  @@map("_CaseStudyToSubService")
-}
-
-model DiscountToServiceCart {
-  A String
-  B String
-
-  @@unique([A, B], map: "_DiscountToServiceCart_AB_unique")
-  @@index([B], map: "_DiscountToServiceCart_B_index")
-  @@map("_DiscountToServiceCart")
-}
-
-model EventToImage {
-  A String
-  B String
-
-  @@unique([A, B], map: "_EventToImage_AB_unique")
-  @@index([B], map: "_EventToImage_B_index")
-  @@map("_EventToImage")
-}
-
-model EventToTag {
-  A String
-  B String
-
-  @@unique([A, B], map: "_EventToTag_AB_unique")
-  @@index([B], map: "_EventToTag_B_index")
-  @@map("_EventToTag")
-}
-
-model GptPromptToImage {
-  A String
-  B String
-
-  @@unique([A, B], map: "_GptPromptToImage_AB_unique")
-  @@index([B], map: "_GptPromptToImage_B_index")
-  @@map("_GptPromptToImage")
-}
-
-model GptPromptToTag {
-  A String
-  B String
-
-  @@unique([A, B], map: "_GptPromptToTag_AB_unique")
-  @@index([B], map: "_GptPromptToTag_B_index")
-  @@map("_GptPromptToTag")
-}
-
-model ImageToProduct {
-  A String
-  B String
-
-  @@unique([A, B], map: "_ImageToProduct_AB_unique")
-  @@index([B], map: "_ImageToProduct_B_index")
-  @@map("_ImageToProduct")
-}
-
-model ImageToSoftwareProduct {
-  A String
-  B String
-
-  @@unique([A, B], map: "_ImageToSoftwareProduct_AB_unique")
-  @@index([B], map: "_ImageToSoftwareProduct_B_index")
-  @@map("_ImageToSoftwareProduct")
-}
-
-model OrganizationToUser {
-  A String
-  B String
-
-  @@unique([A, B], map: "_OrganizationToUser_AB_unique")
-  @@index([B], map: "_OrganizationToUser_B_index")
-  @@map("_OrganizationToUser")
-}
-
-model ProductToSupplier {
-  A String
-  B String
-
-  @@unique([A, B], map: "_ProductToSupplier_AB_unique")
-  @@index([B], map: "_ProductToSupplier_B_index")
-  @@map("_ProductToSupplier")
-}
-
-model ProductToTag {
-  A String
-  B String
-
-  @@unique([A, B], map: "_ProductToTag_AB_unique")
-  @@index([B], map: "_ProductToTag_B_index")
-  @@map("_ProductToTag")
-}
-
-model ReviewToTag {
-  A String
-  B String
-
-  @@unique([A, B], map: "_ReviewToTag_AB_unique")
-  @@index([B], map: "_ReviewToTag_B_index")
-  @@map("_ReviewToTag")
-}
-
-model ServiceCartItemToSubService {
-  A String
-  B String
-
-  @@unique([A, B], map: "_ServiceCartItemToSubService_AB_unique")
-  @@index([B], map: "_ServiceCartItemToSubService_B_index")
-  @@map("_ServiceCartItemToSubService")
-}
-
-model ServiceToTag {
-  A String
-  B String
-
-  @@unique([A, B], map: "_ServiceToTag_AB_unique")
-  @@index([B], map: "_ServiceToTag_B_index")
-  @@map("_ServiceToTag")
-}
-
-model SoftwareProductToTag {
-  A String
-  B String
-
-  @@unique([A, B], map: "_SoftwareProductToTag_AB_unique")
-  @@index([B], map: "_SoftwareProductToTag_B_index")
-  @@map("_SoftwareProductToTag")
-}
-
-model SubServiceToTag {
-  A String
-  B String
-
-  @@unique([A, B], map: "_SubServiceToTag_AB_unique")
-  @@index([B], map: "_SubServiceToTag_B_index")
-  @@map("_SubServiceToTag")
-}
-
-enum ServiceCartStatus {
-  ABANDONED
-  EMPTY
-  PENDING
-  PAID
-}
-
-enum PaymentStatus {
-  PAID
-  PENDING
-  DISPUTED
 }
 
 enum SubscriptionPeriod {
@@ -1189,6 +389,196 @@ enum SoftwarePricing {
   Subscription
 }
 
+model SoftwareProductCategory {
+  id              String                    @id @default(cuid())
+  name            String
+  children        SoftwareProductCategory[] @relation("Subcategories")
+  parent          SoftwareProductCategory?  @relation("Subcategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentId        String?
+  SoftwareProduct SoftwareProduct[]
+
+  createdBy      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId         String?
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
+  @@index([parentId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model Blog {
+  id              String            @id @default(uuid())
+  title           String
+  subTitle        String
+  description     String            @db.Text
+  featured        Boolean           @default(false)
+  images          Image[]
+  author          User              @relation(fields: [userId], references: [id])
+  date            DateTime          @default(now())
+  content         String            @db.LongText
+  tags            Tag[]
+  template        BlogTemplate?     @relation(fields: [blogTemplateId], references: [id])
+  category        BlogCategory?     @relation(fields: [blogCategoryId], references: [id])
+  userId          String
+  Likes           BlogLike[]
+  Views           Int               @default(0)
+  Comments        BlogComment[]
+  blogTemplateId  String?
+  publishDate     DateTime          @default(now())
+  blogCategoryId  String?
+  updatedAt       DateTime          @default(now()) @updatedAt
+  ctaProps        Json?
+  SoftwareProduct SoftwareProduct[]
+
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
+  @@index([userId])
+  @@index([blogTemplateId])
+  @@index([blogCategoryId])
+  @@index([organizationId])
+}
+
+model BlogCategory {
+  id        String         @id @default(cuid())
+  name      String
+  children  BlogCategory[] @relation("SubCategories")
+  parent    BlogCategory?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentId  String?
+  Blog      Blog[]
+  updatedAt DateTime       @default(now()) @updatedAt
+
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
+  @@index([parentId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model BlogTemplate {
+  id       String @id @default(uuid())
+  name     String
+  template String @db.Text
+  Blog     Blog[]
+}
+
+model BlogComment {
+  id        String   @id @default(uuid())
+  comment   String   @db.Text
+  Blog      Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  blogId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  User      User     @relation(fields: [userId], references: [id])
+  userId    String
+
+  @@index([blogId])
+  @@index([userId])
+}
+
+model BlogLike {
+  id        String   @id @default(uuid())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  blog      Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  userId    String?
+  blogId    String
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([blogId])
+}
+
+model Supplier {
+  id                      String    @id @default(uuid())
+  baseShippingPrice       Int
+  height                  Int
+  width                   Int
+  length                  Int
+  weight                  Int
+  supplierName            String
+  supplierStatus          String?
+  shippingWeight          Int?
+  listPrice               Int?
+  salePrice               Int?
+  availability            String?
+  supplierWrittenComments String?
+  supplierUrl             String    @db.Text
+  supplierEmail           String?
+  supplierWhatsApp        String?
+  products                Product[]
+  updatedAt               DateTime  @default(now()) @updatedAt
+  createdAt               DateTime  @default(now())
+}
+
+model Service {
+  id                 String               @id @default(uuid())
+  image              Image?               @relation(fields: [imageId], references: [id])
+  title              String
+  previewContent     String               @db.Text
+  hourlyRate         Int
+  valueBrought       Json
+  skillsUsed         Json
+  htmlEmbed          String?
+  featured           Boolean              @default(false)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @default(now()) @updatedAt
+  reviews            Review[]
+  tags               Tag[]
+  imageId            String?
+  SubServices        SubService[]
+  ServiceDescription ServiceDescription[]
+  CaseStudies        CaseStudy[]
+  faqs               FAQ[]
+  ServiceCartItem    ServiceCartItem[]
+
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
+  @@index([imageId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model ServiceDescription {
+  id          String   @id @default(uuid())
+  title       String
+  content     String   @db.LongText
+  imageOnLeft Boolean  @default(true)
+  image       Image?   @relation(fields: [imageId], references: [id], onDelete: SetNull)
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  imageId     String?
+  serviceId   String
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@index([serviceId])
+  @@index([imageId])
+}
+
+model Payment {
+  id             String         @id @default(uuid())
+  purpose        PaymentPurpose @default(PRODUCT)
+  subscription   Subscription?  @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String?
+  invoice        String         @db.Text
+  amount         Int
+  quantity       Int?           @map("qunantity")
+  customer       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+  userId         String
+  updatedAt      DateTime       @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([subscriptionId])
+}
+
 enum PaymentPurpose {
   SUBSCRIPTION
   PRODUCT
@@ -1197,10 +587,362 @@ enum PaymentPurpose {
   INVOICE
 }
 
+model Review {
+  id               String     @id @default(uuid())
+  name             String
+  image            Image?     @relation(fields: [imageId], references: [id])
+  title            String
+  content          String     @db.Text
+  link             String     @db.Text
+  rating           Int
+  tags             Tag[]
+  verifiedCustomer Boolean    @default(false)
+  reviewType       ReviewType @default(MAIN)
+  product          Product?   @relation(fields: [productId], references: [id])
+  productId        String?
+  service          Service?   @relation(fields: [serviceId], references: [id])
+  serviceId        String?
+  prompt           GptPrompt? @relation(fields: [gptPromptId], references: [id])
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  imageId          String?
+  gptPromptId      String?
+  updatedAt        DateTime   @default(now()) @updatedAt
+  createdAt        DateTime   @default(now())
+
+  @@index([productId])
+  @@index([serviceId])
+  @@index([userId])
+  @@index([imageId])
+  @@index([gptPromptId])
+}
+
+model Image {
+  id                 String               @id @default(uuid())
+  name               String?
+  src                String               @db.Text
+  updatedAt          DateTime             @default(now()) @updatedAt
+  createdAt          DateTime             @default(now())
+  products           Product[]
+  caseStudies        CaseStudy[]
+  blogs              Blog[]
+  Service            Service[]
+  SubService         SubService[]
+  Review             Review[]
+  GptPrompt          GptPrompt[]
+  User               User[]
+  Event              Event[]
+  ServiceDescription ServiceDescription[]
+  SoftwareProduct    SoftwareProduct[]
+}
+
+model SubService {
+  id                                        String            @id @default(uuid())
+  image                                     Image?            @relation(fields: [imageId], references: [id])
+  title                                     String
+  pricingModel                              PricingModel      @default(DEFAULT)
+  serviceDeliverables                       Json?
+  tags                                      Tag[]
+  serviceUsageScore                         Int
+  description                               String            @db.Text
+  department                                String
+  estimated_hours_times_fifty_percent       Int
+  estimated_hours_times_one_hundred_percent Int
+  skillLevel                                String
+  complexity                                Int
+  overheadCost                              Int
+  service                                   Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  imageId                                   String?
+  serviceId                                 String
+  ServiceCartItem                           ServiceCartItem[]
+  CaseStudies                               CaseStudy[]
+  updatedAt                                 DateTime          @default(now()) @updatedAt
+
+  @@index([imageId])
+  @@index([serviceId])
+}
+
+model Discount {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  value     Int       @default(0)
+  expires   DateTime?
+  updatedAt DateTime  @default(now()) @updatedAt
+  createdAt DateTime  @default(now())
+
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+  ServiceCarts   ServiceCart[]
+
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model FAQ {
+  id        String   @id @default(uuid())
+  question  String   @db.Text
+  answer    String   @db.Text
+  Service   Service? @relation(fields: [serviceId], references: [id])
+  serviceId String?
+  updatedAt DateTime @default(now()) @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([serviceId])
+}
+
+model CaseStudy {
+  id                  String       @id @default(uuid())
+  title               String
+  type                Service?     @relation(fields: [serviceId], references: [id])
+  subServices         SubService[]
+  preview             String       @db.Text
+  problemStatement    String       @db.Text
+  userResearch        String       @db.Text
+  results             Json
+  userProblems        Json
+  possibleSolutions   Json
+  goals               Json
+  // images              Json //image
+  images              Image[]
+  uniqueFeatures      String       @db.Text
+  keyLearning         String       @db.Text
+  userPersonas        Json
+  competitiveAnalysis Json         @map("competetiveAnalysis")
+  wireFrames          Json?
+  hifiDesign          Json?
+  userFlow            Json?
+  architecture        Json?
+  serviceId           String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @default(now()) @updatedAt
+
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
+  @@index([serviceId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model GptPrompt {
+  id                   String       @id @default(uuid())
+  description          String       @db.Text
+  title                String       @default("")
+  prompt               String?      @db.Text
+  model                String?      @default("gpt-3.5-turbo")
+  temperature          Int?         @default(0)
+  max_tokens           Int?         @default(0)
+  top_p                Int?         @default(0)
+  best_of              Int?         @default(0)
+  frequency_penalty    Int?         @default(0)
+  presence_penalty     Int?         @default(0)
+  botUrl               String?      @db.Text
+  completions          Int?         @default(1)
+  stop                 Json?
+  timesUsed            Int?         @default(0)
+  timesIntegrated      Int?         @default(0)
+  costPerToken         Int?         @default(0)
+  profitMargin         Int?         @default(0)
+  seed                 Int? // Random seed for reproducibility
+  stream               Boolean      @default(true) // Enable streaming mode
+  variables            Json?
+  startPhrase          String?
+  conversationStarters Json?
+  steps                Json?
+  sysCommands          Json?
+  toolChoice           String?
+  tools                GptTool[]
+  tags                 Tag[]
+  image                Image[]
+  reviews              Review[]
+  imageId              String?
+  pricing              GptPricing   @default(LOW)
+  category             GptCategory? @relation(fields: [gptCategoryId], references: [id])
+  gptCategoryId        String?
+  updatedAt            DateTime     @default(now()) @updatedAt
+  createdAt            DateTime     @default(now())
+  AiRequest            AiRequest[]
+
+  @@index([gptCategoryId])
+}
+
+model GptCategory {
+  id       String        @id @default(cuid())
+  name     String
+  children GptCategory[] @relation("SubCategories")
+  parent   GptCategory?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentId String?
+  prompts  GptPrompt[]
+
+  @@index([parentId])
+}
+
+model GptTool {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  parameters  String?
+  GptPrompt   GptPrompt? @relation(fields: [gptPromptId], references: [id])
+  gptPromptId String?
+  updatedAt   DateTime   @default(now()) @updatedAt
+  createdAt   DateTime   @default(now())
+
+  @@index([gptPromptId])
+}
+
+model Event {
+  id          String      @id @default(uuid())
+  name        String
+  date        DateTime
+  location    String      @db.Text
+  description String      @db.Text
+  image       Image[]
+  eventLink   String      @db.Text // URL for Eventbrite or Facebook event page
+  status      EventStatus
+  isVirtual   Boolean
+  tags        Tag[]
+  updatedAt   DateTime    @default(now()) @updatedAt
+  createdAt   DateTime    @default(now())
+
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model Referral {
+  id             String           @id @default(uuid())
+  prefix         String?
+  type           ReferralType     @default(REDIRECT)
+  campaignId     String
+  expires        DateTime?
+  description    String           @db.Text
+  priority       ReferralPriority @default(LOW)
+  redirect       String           @db.Text
+  mobileRedirect String?          @db.Text
+  link           String
+  fallback       String
+  click          Int
+  utmProps       Json?
+  updatedAt      DateTime         @default(now()) @updatedAt
+  createdAt      DateTime         @default(now())
+
+  createdBy User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+
+  Organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId String?
+
+  @@unique([type, prefix], name: "referralId")
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model Subscription {
+  id                    String             @id @default(cuid())
+  status                SubscriptionStatus
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product               SoftwareProduct    @relation(fields: [subscriptionProductId], references: [id])
+  subscriptionProductId String
+  userId                String
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Payment   Payment[]
+
+  @@index([subscriptionProductId])
+  @@index([userId])
+}
+
 enum SubscriptionStatus {
   ACTIVE
   INACTIVE
   CANCELED
+}
+
+model Credit {
+  id      String @id @default(cuid())
+  credits Float  @default(0)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  String @unique
+
+  software   SoftwareProduct? @relation(fields: [softwareId], references: [id])
+  softwareId String?
+
+  @@index([userId])
+  @@index([softwareId])
+}
+
+model AiRequestUsage {
+  id           String      @id @default(cuid())
+  cost         Float       @default(0)
+  inputTokens  Int?        @default(0)
+  outputTokens Int?        @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  AiRequest    AiRequest[]
+}
+
+model AiRequest {
+  id               String           @id @default(cuid())
+  user             User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  prompt           String
+  requestFiles     AiRequestFile[]
+  ip               String
+  duration         Float
+  response         String           @db.LongText
+  gptPromptUsed    GptPrompt?       @relation(fields: [gptPromptId], references: [id])
+  usage            AiRequestUsage   @relation(fields: [aiRequestUsageId], references: [id])
+  userId           String?
+  gptPromptId      String?
+  responseFiles    AiResponseFile[]
+  aiRequestUsageId String
+
+  @@index([userId])
+  @@index([gptPromptId])
+  @@index([aiRequestUsageId])
+}
+
+model AiRequestFile {
+  id          String     @id @default(cuid())
+  name        String
+  src         String
+  AiRequest   AiRequest? @relation(fields: [aiRequestId], references: [id])
+  aiRequestId String?
+
+  @@index([aiRequestId])
+}
+
+model AiResponseFile {
+  id          String     @id @default(cuid())
+  name        String
+  src         String
+  AiRequest   AiRequest? @relation(fields: [aiRequestId], references: [id])
+  aiRequestId String?
+
+  @@index([aiRequestId])
+}
+
+model AiCost {
+  id        String     @id @default(cuid())
+  modelId   String     @unique
+  modelType String
+  provider  AiProvider
+  input     Decimal?
+  output    Decimal // $20.00 = 2000 // stripe style pricing 
+  costType  AiCostType
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 enum AiCostType {
@@ -1212,13 +954,91 @@ enum AiCostType {
 
 enum AiProvider {
   OpenAI
-  HF
+  HF //huggingface
   LangChain
+}
+
+model Tag {
+  id              String            @id @default(uuid())
+  name            String            @unique
+  products        Product[]
+  blog            Blog[]
+  reviews         Review[]
+  services        Service[]
+  subServices     SubService[]
+  prompts         GptPrompt[]
+  events          Event[]
+  SoftwareProduct SoftwareProduct[]
+}
+
+model Property {
+  id           String         @id @default(uuid())
+  address      Address        @relation(fields: [addressId], references: [id])
+  title        String         @db.Text
+  type         PropertyType
+  featured     Boolean        @default(false)
+  bedroomCount Int
+  bathCount    Float
+  fee          String
+  process      String         @db.Text
+  link         String?        @db.Text
+  deposit      String         @db.Text
+  files        PropertyFile[]
+  addressId    String
+  mapUrl       String         @db.Text
+  additional   String?        @db.Text
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
+
+  @@index([addressId])
+  @@fulltext([title])
+  @@fulltext([title, fee, deposit, additional, process])
 }
 
 enum PropertyType {
   TOWNHOUSE
   APARTMENT
+}
+
+model PropertyFile {
+  id         String    @id @default(uuid())
+  name       String
+  src        String    @db.Text
+  type       String
+  Property   Property? @relation(fields: [propertyId], references: [id])
+  propertyId String?
+  feeSheet   Boolean   @default(false)
+
+  @@index([propertyId])
+}
+
+enum FileType {
+  DOCX
+  PDF
+  XML
+  JPG
+  PNG
+  GIF
+}
+
+model GuruAgent {
+  id            String    @id @default(uuid())
+  role          GuruRole  @default(AGENT)
+  firstName     String
+  lastName      String
+  phone         String?
+  email         String    @unique
+  title         String
+  notes         String?
+  password      String
+  address       Address?  @relation(fields: [addressId], references: [id])
+  addressId     String
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  Session       Session[]
+
+  @@index([addressId])
 }
 
 enum GuruRole {
@@ -1233,6 +1053,11 @@ enum Role {
   TRUSTED
   USER
   CUSTOMER
+}
+
+enum LoginProvider {
+  facebook @map("faceebook")
+  google
 }
 
 enum ReviewType {
@@ -1280,4 +1105,71 @@ enum OrderStatus {
   ACCEPTED
   DISPATCHED
   DELIVERED
+}
+
+// oauth tables
+
+model OauthClient {
+  id              String            @id @default(cuid())
+  secret          String
+  scopes          Json
+  name            String
+  redirectUris    Json
+  OauthTokens     OauthTokens[]
+  OauthAccessCode OauthAccessCode[]
+}
+
+model OauthAccessCode {
+  id     String  @id @default(cuid())
+  code   String
+  scopes Json
+  used   Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  client        OauthClient @relation(fields: [oauthClientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  oauthClientId String
+  userId        String
+
+  @@index([oauthClientId])
+  @@index([userId])
+}
+
+model OauthTokens {
+  id           String   @id @default(cuid())
+  refreshToken String   @db.LongText
+  accessToken  String   @db.LongText
+  scopes       Json
+  expiresAt    DateTime
+
+  client OauthClient @relation(fields: [oauthClientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId        String
+  oauthClientId String
+
+  @@index([userId])
+  @@index([oauthClientId])
+}
+
+model UserAPIKeys {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  type      String
+  User      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+}
+
+model Embeddings {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId])
 }
